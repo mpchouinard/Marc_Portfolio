@@ -1,0 +1,9 @@
+@import "tailwindcss";
+/* KaTeX renders at build time; this is the only stylesheet it needs.
+   No client-side math JS ships. */
+@import "katex/dist/katex.min.css";
+
+/* ---------------------------------------------------------------------------
+   DESIGN TOKENS — NOT YET LOCKED. See PLAN.md §6.
+   Wave 1 agents must NOT edit this file. Token changes go through Wave 0.
+   --------------------------------------------------------------------------- */

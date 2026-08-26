@@ -1,0 +1,64 @@
+---
+title: "DropScout"
+kind: personal
+period:
+  start: 2026-01-01
+  end: 2026-05-01
+status: complete
+role: "solo"
+domains: ["tabular", "web-systems", "information-retrieval"]
+methods: ["weighted-scoring", "async-scraping", "browser-automation"]
+stack: ["python", "fastapi", "postgresql", "react", "typescript", "tailwind", "docker", "playwright", "recharts"]
+results: []
+artifacts:
+  - type: repo
+    url: "https://github.com/mpchouinard"
+    label: "Source on GitHub"
+summary: "Competition-intelligence dashboard that scrapes three marketplaces in parallel and rolls listings into a 0–100 product competition score."
+featured: true
+---
+
+## Problem
+
+Deciding whether a product is worth selling means answering "how crowded is
+this already?" — and that answer is scattered across marketplace listings, ad
+spend, and seller counts, none of which talk to each other. DropScout collapses
+that into a single number a person can act on in a few seconds.
+
+## Data
+
+- **Sources:** eBay API, Facebook Ad Library API, Google Shopping (scraped via Playwright)
+- **Shape:** listing-level records — price, seller, ad presence, timestamps
+- **Storage:** PostgreSQL, structured columns plus JSONB for the raw scrape payloads
+- **Known biases:** {/* TODO(marc): scrapes are point-in-time and geo-dependent; Google Shopping results vary by session. Worth stating explicitly. */}
+
+## Approach
+
+An async FastAPI backend fans out to all three sources in parallel, so a query
+costs roughly the latency of the slowest source rather than the sum of all
+three. Listings are then rolled into a weighted **0–100 competition score**
+across three axes:
+
+- **price** — spread and floor across active listings
+- **ad density** — how much paid acquisition is already pointed at the product
+- **seller count** — how many distinct sellers hold inventory
+
+A React + TypeScript frontend renders scores and competitor trends over time
+with Recharts. The whole stack is containerized so a run is reproducible.
+
+## Experiments
+
+{/* TODO(marc): the scoring function is a set of weights — how did you pick them?
+     If you validated the score against products you knew were saturated vs. open,
+     that validation IS the experiment. Add rows to `results:` for it. */}
+
+## What didn't work
+
+{/* TODO(marc): Google Shopping via Playwright is the obvious candidate here —
+     selector breakage, rate limits, headless detection. Also: any weighting
+     scheme you tried before the current one. */}
+
+## Artifacts
+
+{/* TODO(marc): confirm the repo URL, and add a demo link or a screenshot of the
+     dashboard — this project is visual and deserves an image. */}

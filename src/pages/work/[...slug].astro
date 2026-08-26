@@ -1,0 +1,65 @@
+---
+/**
+ * WAVE 0 PLACEHOLDER — proves the content pipeline compiles.
+ * Wave 1 agent B owns the real case-study template. Keep the data plumbing,
+ * replace the markup.
+ */
+import { getCollection, render } from "astro:content";
+import "../../styles/global.css";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("work");
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const d = entry.data;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{d.title}</title>
+    <meta name="description" content={d.summary} />
+  </head>
+  <body>
+    <main>
+      <h1>{d.title}</h1>
+      <p>{d.summary}</p>
+      <p>
+        {d.kind} · {d.status} · {d.role}
+        {d.affiliation && <> · {d.affiliation}</>}
+      </p>
+
+      {d.results.length > 0 && (
+        <table>
+          <thead>
+            <tr><th>Metric</th><th>Dataset</th><th>Value</th><th>Baseline</th></tr>
+          </thead>
+          <tbody>
+            {d.results.map((r) => (
+              <tr>
+                <td>{r.metric}</td>
+                <td>{r.dataset}</td>
+                <td>{r.value}{r.unit}</td>
+                <td>{r.baseline ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <Content />
+
+      {d.artifacts.length > 0 && (
+        <ul>
+          {d.artifacts.map((a) => (
+            <li><a href={a.url}>{a.label} ({a.type})</a></li>
+          ))}
+        </ul>
+      )}
+    </main>
+  </body>
+</html>
