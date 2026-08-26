@@ -32,10 +32,14 @@
   --color-accent:   #4ADE80;
   --color-accent-dim: #22C55E;
 
-  /* --- aurora: the scroll gradient the hero resolves into ---------------- */
-  --color-aurora-1: #0B3B2E;   /* deep green */
-  --color-aurora-2: #10394A;   /* teal */
-  --color-aurora-3: #241B3D;   /* violet */
+  /* --- bloom: what the glyph field resolves into as you scroll -----------
+     Phosphor family only. Deliberately NO blue/violet — the whole scroll
+     transition stays in one hue family so it can never clash with the
+     accent, and reads as the terminal's own glow blooming. */
+  --color-aurora-1: #08140E;   /* near-black green */
+  --color-aurora-2: #0E3320;   /* deep forest */
+  --color-aurora-3: #14532D;   /* moss — the bloom core */
+  --color-bloom-hot: #86EFAC;  /* light phosphor, for crests and bloom highlights */
 
   /* --- type ------------------------------------------------------------- */
   /* Mono carries the identity: display, nav, labels, metrics, code.
@@ -55,8 +59,19 @@
   --text-small:    0.875rem;
   --text-micro:    0.75rem;
 
-  /* --- motion ------------------------------------------------------------ */
+  /* --- motion ------------------------------------------------------------
+     Physics-flavoured easing. `spring` overshoots slightly then settles, so
+     elements read as having mass rather than being tweened. Use `spring` for
+     entrances, `out-expo` for anything that must not overshoot (nav chrome,
+     opacity-only fades). */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-settle:   cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Shared reveal geometry so every staggered entrance on the site matches. */
+  --reveal-distance: 24px;
+  --reveal-duration: 720ms;
+  --reveal-stagger:  70ms;
 }
 
 /* ===========================================================================

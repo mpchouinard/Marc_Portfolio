@@ -194,16 +194,48 @@ math background resolves into "a cool gradient that is pleasant to the eyes."
 Explicitly NOT Matrix-style falling rain — that is the cliché the plan warns
 against. Everything else on the site stays quiet.
 
-## 5. Motion rules (non-negotiable)
+## 5. Motion rules
 
-- **One orchestrated signature moment, everything else quiet.** Scattered scroll
-  effects on every section is precisely what makes a site read as AI-generated.
-- `prefers-reduced-motion` gets a **static fallback**, not a shortened duration.
-- Animation must never delay LCP — hero text renders immediately regardless of
-  animation state.
-- No scroll-jacking past the point of no return. Keyboard nav unaffected.
+The owner explicitly asked for a page that feels alive as you scroll, overriding
+PLAN.md §4's "everything else quiet". That is a deliberate, informed choice.
+**It is not licence for one-off effects.** There is ONE motion language, defined
+by the tokens below, reused everywhere. A bespoke animation on a single section
+is a bug, not a feature.
 
----
+```
+--ease-spring   cubic-bezier(0.34, 1.56, 0.64, 1)   entrances; slight overshoot = mass
+--ease-settle   cubic-bezier(0.22, 1, 0.36, 1)      settling, scrubbed motion
+--ease-out-expo cubic-bezier(0.16, 1, 0.3, 1)       chrome; must not overshoot
+--reveal-distance 24px · --reveal-duration 720ms · --reveal-stagger 70ms
+```
+
+### The reveal contract (`src/scripts/reveal.ts`)
+
+Markup opts in declaratively. No component writes its own IntersectionObserver.
+
+- `data-reveal` on an element → it rises `--reveal-distance` and fades in when
+  it enters the viewport, once, using `--ease-spring`.
+- `data-reveal-group` on a parent → its direct `[data-reveal]` children stagger
+  by `--reveal-stagger` in DOM order.
+- `data-reveal-delay="120"` → extra per-element delay in ms.
+
+**No-JS safety, and this is mandatory:** elements must be fully visible with CSS
+alone. The hidden starting state may ONLY be applied under `html.js-reveal`, a
+class `reveal.ts` sets on itself at startup. Never put `opacity: 0` in static CSS
+— a JS failure or a crawler would then see a blank page.
+
+**Reduced motion:** `reveal.ts` must not hide anything at all. Everything renders
+in final position immediately. Static fallback, never a shortened duration.
+
+### Non-negotiables (unchanged)
+
+- Animation must never delay LCP — hero text renders immediately, never gated on
+  animation state, never `opacity: 0` awaiting JS.
+- No scroll-jacking past the point of no return. Lenis smooths; it must not trap.
+- Keyboard navigation unaffected. Decorative canvases are `aria-hidden` and not
+  focusable.
+- Every rAF loop pauses when off-screen and on `document.hidden`, and cleans up
+  on `astro:before-swap`.
 
 ## 6. Layout of the repo
 
