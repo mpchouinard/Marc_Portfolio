@@ -214,3 +214,25 @@ src/
   data/profile.ts       # identity/education/experience source of truth
   styles/global.css     # tokens — Wave 0 only
   pages/
+    index.astro         # WAVE 0 PLACEHOLDER — Wave 1 replaces
+    work/[...slug].astro# WAVE 0 PLACEHOLDER — Wave 1 agent B replaces
+```
+
+Both files marked `WAVE 0 PLACEHOLDER` exist purely to prove the pipeline
+compiles. Keep their data plumbing, replace their markup.
+
+---
+
+## 7. Verify before you claim done
+
+```bash
+npm run build
+```
+
+Build must be clean. Then check, every time:
+
+- `grep -c "TODO(marc)" dist/work/*/index.html` → `0` on all pages
+- KaTeX still renders: `grep -c 'class="katex"' dist/work/rnn-music-generation/index.html` → `>0`
+- No new Vite/Astro deprecation warnings introduced
+
+Report failures with the actual output. Do not report success on an unrun build.

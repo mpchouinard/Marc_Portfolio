@@ -1,0 +1,194 @@
+---
+/**
+ * Hero — the site's signature moment.
+ *
+ * Structure:
+ *  - `#hero` is a tall (200vh) section; its inner wrapper is `position:
+ *    sticky; top: 0; height: 100vh`, a pure-CSS pin with none of GSAP's
+ *    `pin: true` scroll-jack risk — it's native browser behavior, always
+ *    interruptible, never traps the scroll. The background layer (glyph
+ *    canvas + aurora, z-0) lives inside that sticky box, so it is
+ *    physically bounded by the hero section's own height and is GUARANTEED
+ *    to scroll away with it — it can never bleed into whatever content a
+ *    different, un-owned page section renders after this one, regardless
+ *    of whether that section sets its own opaque background. (An earlier
+ *    version of this file used `position: fixed` for the background,
+ *    which depended on later sections opaquely covering it — fragile
+ *    across file-ownership boundaries, so it was replaced with this
+ *    self-contained sticky approach.)
+ *  - The extra 100vh of scroll the tall section provides is split: the
+ *    ScrollTrigger-scrubbed crossfade (glyph -> aurora) completes over the
+ *    first ~70% of it, leaving the last ~30% as a deliberate "rest" beat —
+ *    the resolved aurora sits still and fully visible before the section
+ *    finally releases and normal content scrolls up over it.
+ *  - The name + tagline (z-10), plain server-rendered DOM, unconditionally
+ *    visible — never gated on JS or animation state. This is what LCP
+ *    measures; the canvas is decorative and sits behind it.
+ *
+ * Motion wiring (see `../scripts/motion.ts`):
+ *  - `prefers-reduced-motion`: Lenis is never initialized and the
+ *    ScrollTrigger crossfade is never created. The layers stay at their
+ *    CSS resting state — glyph field fully opaque (rendering the single
+ *    static frame `glyph-field.ts` draws on its own), aurora at opacity 0.
+ *    That resting composition *is* the reduced-motion fallback: a static
+ *    hero, no animation, nothing shortened.
+ *  - Otherwise: Lenis smooth scroll starts, and a GSAP ScrollTrigger scrubs
+ *    the two layers' opacity across the hero's own viewport height.
+ *  - Live toggling of the OS setting is handled: flip it mid-session and
+ *    the hero switches between the two modes immediately.
+ *
+ * Owned by Wave 1 Agent C.
+ */
+import GlyphField from "./GlyphField.astro";
+import { profile } from "../data/profile";
+---
+
+<section id="hero" class="relative h-[200vh] w-full">
+  <div class="sticky top-0 flex h-screen w-full flex-col items-center justify-center overflow-hidden">
+    <div class="absolute inset-0 z-0">
+      <div id="hero-glyph-layer" class="absolute inset-0">
+        <GlyphField />
+      </div>
+      <div id="hero-aurora" class="absolute inset-0 opacity-0"></div>
+    </div>
+
+    <div class="relative z-10 flex flex-col items-center px-6 text-center">
+      <h1 class="font-mono text-hero text-bright">
+        {profile.name}
+      </h1>
+      <p class="mt-6 max-w-2xl text-lede text-muted">
+        {profile.tagline}
+      </p>
+    </div>
+
+    <div
+      id="hero-scroll-cue"
+      class="pointer-events-none absolute inset-x-0 bottom-8 z-10 flex flex-col items-center gap-3"
+      aria-hidden="true"
+    >
+      <span class="text-micro font-mono uppercase tracking-[0.3em] text-muted">Scroll</span>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="h-4 w-4 animate-bounce text-faint"
+      >
+        <path d="M12 4v14m0 0-5-5m5 5 5-5" />
+      </svg>
+    </div>
+  </div>
+</section>
+
+<style>
+  /*
+    Layered radial gradients from the aurora tokens, over the ground color,
+    softened with a generous blur. Scaled up + blurred so the diffusion
+    never shows a hard edge at the viewport boundary.
+  */
+  #hero-aurora {
+    background-color: var(--color-ground);
+    background-image:
+      radial-gradient(circle at 18% 24%, var(--color-aurora-2) 0%, transparent 55%),
+      radial-gradient(circle at 82% 16%, var(--color-aurora-3) 0%, transparent 52%),
+      radial-gradient(circle at 50% 90%, var(--color-aurora-1) 0%, transparent 62%);
+    filter: blur(90px) saturate(120%);
+    transform: scale(1.2);
+    will-change: opacity;
+  }
+
+  #hero-glyph-layer {
+    will-change: opacity;
+  }
+
+  /* The extra 100vh of section height exists purely to host the sticky
+     "hold" range the scroll-scrubbed crossfade animates through. Under
+     reduced motion that animation never runs (see the script below), so
+     the extra scroll distance would just be dead space — collapse it back
+     to a plain 100vh section instead of making reduced-motion users scroll
+     through a static screen twice as tall as it needs to be. This is a
+     pure CSS fallback: it applies before any JS runs. */
+  @media (prefers-reduced-motion: reduce) {
+    #hero {
+      height: 100vh;
+    }
+  }
+</style>
+
+<script>
+  import { gsap, ScrollTrigger, initSmoothScroll, prefersReducedMotion, onReducedMotionChange } from "../scripts/motion";
+
+  const heroSection = document.getElementById("hero");
+  const glyphLayer = document.getElementById("hero-glyph-layer");
+  const auroraLayer = document.getElementById("hero-aurora");
+  const scrollCue = document.getElementById("hero-scroll-cue");
+
+  if (heroSection && glyphLayer && auroraLayer) {
+    let cleanupSmoothScroll: () => void = () => {};
+    let timeline: ReturnType<typeof gsap.timeline> | null = null;
+    let trigger: ScrollTrigger | null = null;
+
+    function enableMotion(): void {
+      cleanupSmoothScroll = initSmoothScroll();
+
+      // Built paused, then handed to ScrollTrigger as `animation` below —
+      // ScrollTrigger drives its progress from scroll, so it must never
+      // free-run on its own timeline default (autoplay).
+      timeline = gsap.timeline({ paused: true });
+      timeline.to(glyphLayer, { opacity: 0, ease: "none" }, 0);
+      timeline.to(auroraLayer, { opacity: 1, ease: "none" }, 0);
+      // The cue fades out quickly (a fifth the duration of the main
+      // crossfade) — it has no reason to linger once the user is already
+      // well into the 200vh hero journey.
+      if (scrollCue) timeline.to(scrollCue, { opacity: 0, ease: "none", duration: 0.2 }, 0);
+
+      trigger = ScrollTrigger.create({
+        trigger: heroSection,
+        start: "top top",
+        // The section is 200vh (100vh visible + 100vh of sticky "hold"
+        // room). The crossfade finishes 70% of the way through that extra
+        // range, leaving a deliberate still beat on the resolved aurora
+        // before the section releases. A function re-evaluates on resize,
+        // so this stays correct across viewport size changes.
+        end: () => `+=${window.innerHeight * 0.7}`,
+        scrub: 0.5,
+        animation: timeline,
+      });
+    }
+
+    function disableMotion(): void {
+      trigger?.kill();
+      trigger = null;
+      timeline?.kill();
+      timeline = null;
+      cleanupSmoothScroll();
+      cleanupSmoothScroll = () => {};
+      // Resting state: glyph field owns the view, aurora hidden. This is
+      // exactly the pre-scroll composition of the animated version, held
+      // still — the reduced-motion fallback, not a shortened animation.
+      gsap.set(glyphLayer, { opacity: 1 });
+      gsap.set(auroraLayer, { opacity: 0 });
+      if (scrollCue) gsap.set(scrollCue, { opacity: 1 });
+    }
+
+    if (prefersReducedMotion()) {
+      disableMotion();
+    } else {
+      enableMotion();
+    }
+
+    const unsubscribeReducedMotion = onReducedMotionChange((reduced) => {
+      if (reduced) disableMotion();
+      else enableMotion();
+    });
+
+    const teardown = () => {
+      disableMotion();
+      unsubscribeReducedMotion();
+      window.removeEventListener("astro:before-swap", teardown);
+    };
+    window.addEventListener("astro:before-swap", teardown, { once: true });
+  }
+</script>

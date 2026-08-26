@@ -1,0 +1,51 @@
+---
+/**
+ * GlyphField — the canvas surface for the mathematical scalar-field
+ * background. Purely decorative: `aria-hidden`, no `tabindex`, so it never
+ * enters the keyboard tab order and is invisible to assistive tech.
+ *
+ * All the actual work (grid layout, the scalar field, reduced-motion
+ * handling, visibility-aware pausing) lives in `../scripts/glyph-field.ts`.
+ * This component just mounts the canvas and hands it off.
+ *
+ * Owned by Wave 1 Agent C.
+ */
+export interface Props {
+  /** Extra classes merged onto the canvas (e.g. for the parent to control
+   *  stacking/opacity as part of the scroll-driven crossfade). */
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<canvas
+  data-glyph-field
+  aria-hidden="true"
+  class:list={["pointer-events-none block h-full w-full", className]}
+></canvas>
+
+<script>
+  import { initGlyphField } from "../scripts/glyph-field";
+
+  // Idempotent: mounts any glyph-field canvas that hasn't been mounted yet.
+  // Astro dedupes this module script across instances, and this guard also
+  // makes it safe if the component is ever reused on the same page or the
+  // script re-runs after a View Transitions swap.
+  function mountAll(): void {
+    const canvases = document.querySelectorAll<HTMLCanvasElement>(
+      "canvas[data-glyph-field]:not([data-glyph-mounted])",
+    );
+    canvases.forEach((canvas) => {
+      canvas.dataset.glyphMounted = "true";
+      initGlyphField(canvas);
+    });
+  }
+
+  mountAll();
+
+  // If a later page uses View Transitions, astro:page-load fires after
+  // every swap (including the first load) — re-run so a freshly swapped-in
+  // canvas gets mounted too. Harmless no-op today since nothing unmounts it.
+  document.addEventListener("astro:page-load", mountAll);
+</script>

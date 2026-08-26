@@ -1,35 +1,45 @@
 ---
 /**
- * WAVE 0 PLACEHOLDER — Wave 1 agent A/D own the real shell and browse views.
+ * Home. Composed by the orchestrator from Wave 1's components:
+ *   Hero (agent C) -> selected work (agent D's ProjectCard) -> route to /work/.
+ *
+ * `bleed` strips <main>'s padded max-width box so the hero can run full-bleed;
+ * every section below therefore supplies its own container.
+ * `transparentNav` lets the nav sit over the hero until it scrolls.
  */
+import Base from "../layouts/Base.astro";
+import Hero from "../components/Hero.astro";
+import ProjectCard from "../components/ProjectCard.astro";
 import { getCollection } from "astro:content";
-import "../styles/global.css";
 import { profile } from "../data/profile";
 
-const work = (await getCollection("work")).sort(
-  (a, b) => b.data.period.start.valueOf() - a.data.period.start.valueOf(),
-);
+const featured = (await getCollection("work"))
+  .filter((entry) => entry.data.featured)
+  .sort((a, b) => b.data.period.start.valueOf() - a.data.period.start.valueOf());
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{profile.name}</title>
-    <meta name="description" content={profile.tagline} />
-  </head>
-  <body>
-    <main>
-      <h1>{profile.name}</h1>
-      <p>{profile.tagline}</p>
-      <ul>
-        {work.map((entry) => (
-          <li>
-            <a href={`/work/${entry.id}/`}>{entry.data.title}</a>
-            {" — "}{entry.data.summary}
-          </li>
-        ))}
-      </ul>
-    </main>
-  </body>
-</html>
+<Base title={profile.name} description={profile.tagline} transparentNav bleed>
+  <Hero />
+
+  {
+    featured.length > 0 && (
+      <section class="mx-auto w-full max-w-[72rem] px-6 py-24 md:px-10 md:py-32">
+        <header class="mb-10 flex items-baseline justify-between gap-6 border-b border-rule pb-4">
+          <h2 class="font-mono text-micro uppercase tracking-[0.2em] text-faint">
+            Selected work
+          </h2>
+          <a
+            href="/work/"
+            class="font-mono text-micro uppercase tracking-[0.2em] text-muted transition-colors hover:text-accent"
+          >
+            All work →
+          </a>
+        </header>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          {featured.map((entry) => <ProjectCard work={entry} />)}
+        </div>
+      </section>
+    )
+  }
+</Base>
