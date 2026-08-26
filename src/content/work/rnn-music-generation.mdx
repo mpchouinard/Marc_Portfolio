@@ -22,6 +22,9 @@ summary: "PyTorch RNN that generates pop music as readable sheet music, using an
 featured: false
 ---
 
+import ResultsTable from "../../components/ResultsTable.astro";
+import ArtifactList from "../../components/ArtifactList.astro";
+
 ## Problem
 
 Symbolic music generation usually tokenizes absolute pitch, which means the
@@ -56,6 +59,8 @@ generated sheet music at the other end.
 
 ## Experiments
 
+<ResultsTable results={frontmatter.results} />
+
 {/* TODO(marc): the 80% vocabulary reduction is captured. What did it buy you —
      lower perplexity, faster convergence, fewer epochs to coherent output?
      Even a rough before/after belongs in `results:`. */}
@@ -66,6 +71,8 @@ generated sheet music at the other end.
      lose long-range structure past a certain sequence length? Say so. */}
 
 ## Artifacts
+
+<ArtifactList artifacts={frontmatter.artifacts} />
 
 {/* TODO(marc): confirm repo URL. A rendered score image and an audio clip would
      make this project land far harder than prose. */}

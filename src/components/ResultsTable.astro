@@ -1,0 +1,73 @@
+---
+/**
+ * ResultsTable — renders the `results` frontmatter array as a real
+ * comparison table. Owned by Wave 1 agent B.
+ *
+ * The schema carries no "higher/lower is better" direction flag (a metric
+ * like latency is better lower; accuracy is better higher), so the delta
+ * column is shown as a plain signed number — never colored as good/bad.
+ *
+ * Renders nothing when `results` is empty.
+ */
+export interface Props {
+  results: Array<{
+    metric: string;
+    dataset: string;
+    value: number;
+    baseline?: number;
+    unit?: string;
+  }>;
+}
+
+const { results } = Astro.props;
+
+const fmtNumber = (n: number) => {
+  // Collapse floating point noise (e.g. 0.30000000000000004) without
+  // imposing a fixed precision that isn't in the source data.
+  const rounded = parseFloat(n.toFixed(6));
+  return rounded.toString();
+};
+
+const fmtValue = (n: number, unit?: string) => `${fmtNumber(n)}${unit ?? ""}`;
+
+const fmtDelta = (value: number, baseline: number | undefined, unit?: string): string | null => {
+  if (baseline === undefined) return null;
+  const d = parseFloat((value - baseline).toFixed(6));
+  if (d === 0) return `±0${unit ?? ""}`;
+  const sign = d > 0 ? "+" : "";
+  return `${sign}${fmtNumber(d)}${unit ?? ""}`;
+};
+---
+
+{
+  results.length > 0 && (
+    <div class="overflow-x-auto rounded-md border border-rule">
+      <table class="w-full min-w-[34rem] border-collapse font-mono text-small">
+        <thead>
+          <tr class="border-b border-rule bg-raised text-left text-micro uppercase tracking-wide text-faint">
+            <th class="px-4 py-2.5 font-medium">Metric</th>
+            <th class="px-4 py-2.5 font-medium">Dataset</th>
+            <th class="px-4 py-2.5 text-right font-medium">Value</th>
+            <th class="px-4 py-2.5 text-right font-medium">Baseline</th>
+            <th class="px-4 py-2.5 text-right font-medium">Delta</th>
+          </tr>
+        </thead>
+        <tbody>
+          {results.map((r, i) => (
+            <tr class:list={["text-text", i > 0 && "border-t border-rule"]}>
+              <td class="px-4 py-2.5">{r.metric}</td>
+              <td class="px-4 py-2.5 text-muted">{r.dataset}</td>
+              <td class="px-4 py-2.5 text-right text-bright">{fmtValue(r.value, r.unit)}</td>
+              <td class="px-4 py-2.5 text-right text-muted">
+                {r.baseline !== undefined ? fmtValue(r.baseline, r.unit) : "—"}
+              </td>
+              <td class="px-4 py-2.5 text-right text-muted">
+                {fmtDelta(r.value, r.baseline, r.unit) ?? "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}

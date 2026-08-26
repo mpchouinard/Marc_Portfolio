@@ -1,0 +1,84 @@
+---
+/**
+ * MetaBar — dense case-study metadata: kind / status / role / affiliation /
+ * period, plus domain / method / stack tag chips. Pure presentational —
+ * every value comes in as a prop, nothing is re-derived or invented here.
+ * Owned by Wave 1 agent B.
+ */
+export interface Props {
+  kind: "research" | "coursework" | "personal" | "industry";
+  status: "ongoing" | "complete" | "under-review" | "published" | "archived";
+  role: string;
+  affiliation?: string;
+  period: { start: Date; end?: Date };
+  domains: string[];
+  methods: string[];
+  stack: string[];
+}
+
+const { kind, status, role, affiliation, period, domains, methods, stack } = Astro.props;
+
+// Dates are stored as UTC midnight by the content loader (z.date() on a bare
+// YAML date). Format in UTC explicitly so the displayed month never drifts
+// with the build machine's local timezone.
+const dateFmt = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+const periodLabel = `${dateFmt.format(period.start)} – ${period.end ? dateFmt.format(period.end) : "present"}`;
+
+// Schema values are kebab-case tokens ("under-review"); render them as
+// readable words without inventing new copy.
+const humanize = (s: string) => s.replace(/-/g, " ");
+
+const chipGroups: { label: string; items: string[] }[] = [
+  { label: "domains", items: domains },
+  { label: "methods", items: methods },
+  { label: "stack", items: stack },
+].filter((g) => g.items.length > 0);
+---
+
+<div class="rounded-md border border-rule bg-raised">
+  <dl class="grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-4 font-mono text-small sm:grid-cols-4">
+    <div>
+      <dt class="text-micro uppercase tracking-wide text-faint">Kind</dt>
+      <dd class="mt-1 text-text">{humanize(kind)}</dd>
+    </div>
+    <div>
+      <dt class="text-micro uppercase tracking-wide text-faint">Status</dt>
+      <dd class="mt-1 text-accent">{humanize(status)}</dd>
+    </div>
+    <div>
+      <dt class="text-micro uppercase tracking-wide text-faint">Role</dt>
+      <dd class="mt-1 text-text">{role}</dd>
+    </div>
+    <div>
+      <dt class="text-micro uppercase tracking-wide text-faint">Period</dt>
+      <dd class="mt-1 text-text">{periodLabel}</dd>
+    </div>
+    {
+      affiliation && (
+        <div class="col-span-2 sm:col-span-4">
+          <dt class="text-micro uppercase tracking-wide text-faint">Affiliation</dt>
+          <dd class="mt-1 text-text">{affiliation}</dd>
+        </div>
+      )
+    }
+  </dl>
+
+  {
+    chipGroups.length > 0 && (
+      <div class="flex flex-col gap-3 border-t border-rule px-5 py-4">
+        {chipGroups.map((group) => (
+          <div class="grid grid-cols-[5.5rem_1fr] items-baseline gap-3">
+            <span class="font-mono text-micro uppercase tracking-wide text-faint">{group.label}</span>
+            <div class="flex flex-wrap gap-1.5">
+              {group.items.map((item) => (
+                <span class="rounded-sm border border-rule px-2 py-0.5 font-mono text-micro text-muted">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+</div>

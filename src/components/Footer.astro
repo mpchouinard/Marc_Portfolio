@@ -1,0 +1,42 @@
+---
+/**
+ * Site footer — chrome only. Owned by Wave 1 agent A. No props.
+ * Identity comes from src/data/profile.ts — nothing here is retyped copy.
+ */
+import { profile } from "../data/profile";
+
+const year = new Date().getFullYear();
+const hasLinkedin = profile.links.linkedin.length > 0;
+---
+
+<footer class="border-t border-rule bg-sunken">
+  <div class="mx-auto flex max-w-[72rem] flex-col gap-3 px-6 py-8 font-mono text-small text-muted md:flex-row md:items-center md:justify-between md:px-10">
+    <p class="text-micro text-faint">&copy; {year} {profile.name}</p>
+
+    <nav class="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Contact and profiles">
+      <a href={`mailto:${profile.email}`} class="transition-colors hover:text-accent">
+        {profile.email}
+      </a>
+      <a
+        href={profile.links.github}
+        target="_blank"
+        rel="noreferrer noopener"
+        class="transition-colors hover:text-accent"
+      >
+        GitHub
+      </a>
+      {
+        hasLinkedin && (
+          <a
+            href={profile.links.linkedin}
+            target="_blank"
+            rel="noreferrer noopener"
+            class="transition-colors hover:text-accent"
+          >
+            LinkedIn
+          </a>
+        )
+      }
+    </nav>
+  </div>
+</footer>

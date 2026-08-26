@@ -16,6 +16,9 @@ summary: "Head-to-head evaluation of sparse, dense, and graph-based retrieval on
 featured: true
 ---
 
+import ResultsTable from "../../components/ResultsTable.astro";
+import ArtifactList from "../../components/ArtifactList.astro";
+
 ## Problem
 
 A retrieval-augmented generation system is only as good as the documents it
@@ -48,6 +51,8 @@ tractable rather than a weekend of laptop time.
 
 ## Experiments
 
+<ResultsTable results={frontmatter.results} />
+
 {/* This section auto-renders from the `results` frontmatter once numbers exist. */}
 
 {/* TODO(marc): highest-value gap in the whole portfolio. Fill in `results:`
@@ -62,6 +67,8 @@ tractable rather than a weekend of laptop time.
      OOM'd and what you changed — anything real. */}
 
 ## Artifacts
+
+<ArtifactList artifacts={frontmatter.artifacts} />
 
 {/* TODO(marc): repo link if the benchmarking code is public; figures from the
      MEDgevity application as a poster/slides artifact. */}

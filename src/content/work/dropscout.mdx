@@ -18,6 +18,9 @@ summary: "Competition-intelligence dashboard that scrapes three marketplaces in 
 featured: true
 ---
 
+import ResultsTable from "../../components/ResultsTable.astro";
+import ArtifactList from "../../components/ArtifactList.astro";
+
 ## Problem
 
 Deciding whether a product is worth selling means answering "how crowded is
@@ -48,6 +51,8 @@ with Recharts. The whole stack is containerized so a run is reproducible.
 
 ## Experiments
 
+<ResultsTable results={frontmatter.results} />
+
 {/* TODO(marc): the scoring function is a set of weights — how did you pick them?
      If you validated the score against products you knew were saturated vs. open,
      that validation IS the experiment. Add rows to `results:` for it. */}
@@ -59,6 +64,8 @@ with Recharts. The whole stack is containerized so a run is reproducible.
      scheme you tried before the current one. */}
 
 ## Artifacts
+
+<ArtifactList artifacts={frontmatter.artifacts} />
 
 {/* TODO(marc): confirm the repo URL, and add a demo link or a screenshot of the
      dashboard — this project is visual and deserves an image. */}

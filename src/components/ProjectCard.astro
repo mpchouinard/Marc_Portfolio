@@ -1,0 +1,76 @@
+---
+/**
+ * ProjectCard — one `work` collection entry rendered as a single clickable
+ * card. The whole card is one accessible <a>; no interactive elements are
+ * nested inside it.
+ */
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  work: CollectionEntry<"work">;
+}
+
+const { work } = Astro.props;
+const d = work.data;
+
+function year(date: Date) {
+  return date.getUTCFullYear();
+}
+
+const startYear = year(d.period.start);
+const endYear = d.period.end ? year(d.period.end) : null;
+const periodLabel = endYear
+  ? startYear === endYear
+    ? `${startYear}`
+    : `${startYear}–${endYear}`
+  : `${startYear}–ongoing`;
+
+// A handful of chips drawn from real taxonomy fields — never fabricated.
+const chips = [...d.domains.slice(0, 3), ...d.methods.slice(0, 2)];
+---
+
+<a
+  href={`/work/${work.id}/`}
+  class:list={[
+    "group relative block border border-rule bg-raised transition-colors duration-200 ease-out-expo hover:border-accent-dim focus-visible:border-accent",
+    d.featured ? "p-6 sm:p-7" : "p-5",
+  ]}
+>
+  {
+    d.featured && (
+      <span class="absolute right-5 top-5 font-mono text-micro font-bold uppercase tracking-widest text-accent">
+        Featured
+      </span>
+    )
+  }
+
+  <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 pr-16 font-mono text-micro uppercase tracking-widest text-muted">
+    <span>{d.kind}</span>
+    <span aria-hidden="true" class="text-faint">/</span>
+    <span>{periodLabel}</span>
+    {
+      !d.period.end && (
+        <>
+          <span aria-hidden="true" class="text-faint">/</span>
+          <span class="text-accent">ongoing</span>
+        </>
+      )
+    }
+  </div>
+
+  <h3 class={d.featured ? "mt-3 break-words text-title" : "mt-3 break-words text-lede"}>
+    {d.title}
+  </h3>
+
+  <p class="mt-2 max-w-prose text-small text-text">{d.summary}</p>
+
+  {
+    chips.length > 0 && (
+      <ul class="mt-4 flex flex-wrap gap-2">
+        {chips.map((tag) => (
+          <li class="border border-rule px-2 py-0.5 font-mono text-micro text-muted">{tag}</li>
+        ))}
+      </ul>
+    )
+  }
+</a>

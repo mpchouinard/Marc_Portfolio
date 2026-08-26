@@ -1,0 +1,45 @@
+---
+/**
+ * DataCard — a small bordered card for a case study's Data section:
+ * source / size / splits / known biases. Owned by Wave 1 agent B.
+ *
+ * The three seed MDX files currently write this section as prose bullets
+ * rather than structured frontmatter (the `work` schema has no dedicated
+ * `data` object), so nothing in `src/content/work/*.mdx` calls this today.
+ * It's built and exported so a future case study can `import DataCard from
+ * "../../components/DataCard.astro"` directly in its .mdx and pass real
+ * values — never invent placeholder copy to justify using it here.
+ *
+ * Any field left out is simply omitted from the card, not shown as "—".
+ */
+export interface Props {
+  source?: string;
+  size?: string;
+  splits?: string;
+  biases?: string;
+}
+
+const { source, size, splits, biases } = Astro.props;
+
+const rows = [
+  { label: "Source", value: source },
+  { label: "Size", value: size },
+  { label: "Splits", value: splits },
+  { label: "Known biases", value: biases },
+].filter((r): r is { label: string; value: string } => Boolean(r.value));
+---
+
+{
+  rows.length > 0 && (
+    <div class="rounded-md border border-rule bg-raised p-5">
+      <dl class="flex flex-col gap-3 font-mono text-small">
+        {rows.map((r) => (
+          <div class="grid grid-cols-[7rem_1fr] gap-3">
+            <dt class="text-micro uppercase tracking-wide text-faint">{r.label}</dt>
+            <dd class="text-text">{r.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}

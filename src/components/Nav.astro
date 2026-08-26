@@ -1,0 +1,91 @@
+---
+/**
+ * Site nav — chrome only. Owned by Wave 1 agent A.
+ * Props are fixed by Base.astro's contract: `transparent?: boolean`.
+ */
+import { profile } from "../data/profile";
+
+interface Props {
+  transparent?: boolean;
+}
+
+const { transparent = false } = Astro.props;
+
+const path = Astro.url.pathname;
+const isHome = path === "/";
+const isWork = path.startsWith("/work");
+
+// Short mark from the owner's initials — identity lives in profile.ts,
+// this just derives a glyph from it rather than retyping a name.
+const mark = profile.name
+  .split(" ")
+  .map((part) => part[0])
+  .join("");
+---
+
+<header
+  data-nav
+  class:list={[
+    "sticky top-0 z-50",
+    transparent
+      ? "bg-transparent border-b border-transparent"
+      : "bg-ground border-b border-rule",
+  ]}
+>
+  <nav class="mx-auto flex max-w-[72rem] items-center justify-between px-6 py-4 font-mono text-small tracking-wide uppercase md:px-10">
+    <a
+      href="/"
+      aria-current={isHome ? "page" : undefined}
+      class:list={[
+        "transition-colors hover:text-accent",
+        isHome ? "text-accent" : "text-bright",
+      ]}
+    >
+      {mark}
+    </a>
+    <a
+      href="/work/"
+      aria-current={isWork ? "page" : undefined}
+      class:list={[
+        "transition-colors hover:text-accent",
+        isWork ? "text-accent" : "text-muted",
+      ]}
+    >
+      Work
+    </a>
+  </nav>
+</header>
+
+<style>
+  /* Base state is set by Tailwind utility classes above. This only owns the
+     scroll-triggered transition — the global prefers-reduced-motion rule in
+     global.css collapses these durations to ~0 automatically. */
+  [data-nav] {
+    transition:
+      background-color 300ms var(--ease-out-expo),
+      border-color 300ms var(--ease-out-expo),
+      backdrop-filter 300ms var(--ease-out-expo);
+  }
+  [data-nav].is-scrolled {
+    background-color: color-mix(in oklab, var(--color-ground) 82%, transparent);
+    border-color: var(--color-rule);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+</style>
+
+<script>
+  const header = document.querySelector("[data-nav]");
+  let ticking = false;
+  const sync = () => {
+    header?.classList.toggle("is-scrolled", window.scrollY > 8);
+    ticking = false;
+  };
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(sync);
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  sync();
+</script>

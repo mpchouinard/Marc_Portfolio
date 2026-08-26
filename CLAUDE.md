@@ -94,9 +94,37 @@ hand-writing HTML that duplicates frontmatter, stop — render from the data.
 
 `Problem` → `Data` → `Approach` → `Experiments` → `What didn't work` → `Artifacts`
 
-`Experiments` auto-renders from the `results` frontmatter. **`What didn't work`
-is mandatory** — negative results are the strongest signal that the work is real,
-and almost no portfolio has them.
+Every case-study MDX file MUST open with these two imports (blank line after
+them, or MDX fails to parse), and place the components under their own headings:
+
+```mdx
+---
+title: "..."
+# ...rest of frontmatter
+---
+
+import ResultsTable from "../../components/ResultsTable.astro";
+import ArtifactList from "../../components/ArtifactList.astro";
+
+## Problem
+...
+## Experiments
+
+<ResultsTable results={frontmatter.results} />
+
+## What didn't work
+...
+## Artifacts
+
+<ArtifactList artifacts={frontmatter.artifacts} />
+```
+
+Both components render **nothing** when their array is empty, so the imports are
+safe to include before any data exists. This is what makes `Experiments`
+auto-render from frontmatter *in place* rather than as a detached appendix.
+
+**`What didn't work` is mandatory** — negative results are the strongest signal
+that the work is real, and almost no portfolio has them.
 
 ---
 

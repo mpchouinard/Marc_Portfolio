@@ -1,0 +1,85 @@
+---
+/**
+ * Timeline — every `work` entry on one chronological spine, kinds
+ * interleaved. This is "the container made visible": research, coursework,
+ * personal, and industry work share one line rather than sitting in three
+ * disconnected lists.
+ *
+ * Kinds are told apart by weight / case / border treatment only — the
+ * palette has exactly one accent color (PLAN.md §6), reserved here for the
+ * "ongoing" marker rather than for telling kinds apart.
+ */
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  entries: CollectionEntry<"work">[];
+}
+
+const { entries } = Astro.props;
+
+// Oldest to newest — the timeline reads as a trajectory, ending at "ongoing".
+const sorted = [...entries].sort(
+  (a, b) => a.data.period.start.valueOf() - b.data.period.start.valueOf(),
+);
+
+function formatMonthYear(date: Date) {
+  return date.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+type Kind = CollectionEntry<"work">["data"]["kind"];
+
+// Four kinds, one accent color: differentiated by weight, case, and border
+// treatment rather than by inventing new hues.
+const KIND_META: Record<Kind, { label: string; class: string }> = {
+  research: { label: "Research", class: "font-bold uppercase tracking-widest" },
+  industry: {
+    label: "Industry",
+    class: "border border-rule px-1.5 py-0.5 font-bold uppercase tracking-widest",
+  },
+  coursework: {
+    label: "Coursework",
+    class: "border border-dashed border-rule px-1.5 py-0.5 font-normal uppercase tracking-wide",
+  },
+  personal: { label: "personal", class: "font-normal lowercase" },
+};
+---
+
+{
+  sorted.length > 0 && (
+    <ol class="relative ml-1 border-l border-rule">
+      {sorted.map((entry) => {
+        const d = entry.data;
+        const ongoing = !d.period.end;
+        const meta = KIND_META[d.kind];
+        return (
+          <li class="relative py-8 pl-7 last:pb-0 sm:pl-9">
+            <span
+              aria-hidden="true"
+              class:list={[
+                "absolute left-0 top-9 h-2.5 w-2.5 -translate-x-1/2 rounded-full border",
+                ongoing ? "border-accent bg-accent" : "border-faint bg-ground",
+              ]}
+            />
+
+            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-micro text-muted">
+              <span class={meta.class}>{meta.label}</span>
+              <time class="text-muted">
+                {formatMonthYear(d.period.start)}
+                {" – "}
+                {ongoing ? <span class="font-bold text-accent">ongoing</span> : formatMonthYear(d.period.end as Date)}
+              </time>
+            </div>
+
+            <h3 class="mt-1.5 break-words text-lede">
+              <a href={`/work/${entry.id}/`} class="hover:text-accent focus-visible:text-accent">
+                {d.title}
+              </a>
+            </h3>
+
+            <p class="mt-1 max-w-prose break-words text-small text-text">{d.summary}</p>
+          </li>
+        );
+      })}
+    </ol>
+  )
+}
