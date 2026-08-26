@@ -3,7 +3,174 @@
    No client-side math JS ships. */
 @import "katex/dist/katex.min.css";
 
-/* ---------------------------------------------------------------------------
-   DESIGN TOKENS — NOT YET LOCKED. See PLAN.md §6.
-   Wave 1 agents must NOT edit this file. Token changes go through Wave 0.
-   --------------------------------------------------------------------------- */
+/* Self-hosted variable fonts — no external request, no render-blocking
+   third-party origin. Matters for the Lighthouse target. */
+@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/inter";
+
+/* ===========================================================================
+   DESIGN TOKENS — LOCKED 2026-08-26. Direction: "Terminal".
+   Wave 1+ agents MUST NOT edit this file. Token changes go through Wave 0.
+   =========================================================================== */
+
+@theme {
+  /* --- ground plane ---------------------------------------------------- */
+  --color-ground:   #0A0A0B;   /* page background, near-black */
+  --color-raised:   #131316;   /* cards, panels, code blocks */
+  --color-sunken:   #060607;   /* footer, insets */
+
+  /* --- ink -------------------------------------------------------------- */
+  --color-text:     #D4D4D8;   /* body */
+  --color-bright:   #F4F4F5;   /* headings, emphasis */
+  --color-muted:    #8A8A93;   /* secondary, metadata */
+  --color-faint:    #52525B;   /* tertiary, disabled */
+
+  /* --- structure -------------------------------------------------------- */
+  --color-rule:     #27272A;   /* hairlines, borders, grid */
+
+  /* --- accent (single, phosphor) ---------------------------------------- */
+  --color-accent:   #4ADE80;
+  --color-accent-dim: #22C55E;
+
+  /* --- aurora: the scroll gradient the hero resolves into ---------------- */
+  --color-aurora-1: #0B3B2E;   /* deep green */
+  --color-aurora-2: #10394A;   /* teal */
+  --color-aurora-3: #241B3D;   /* violet */
+
+  /* --- type ------------------------------------------------------------- */
+  /* Mono carries the identity: display, nav, labels, metrics, code.
+     Inter is used ONLY for long-form case-study prose — mono at paragraph
+     length is genuinely hard to read, and these pages are meant to be read.
+     To go fully mono, point --font-body at the mono stack. */
+  --font-display: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-mono:    "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-body:    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* --- type scale (explicit weights) ------------------------------------ */
+  --text-hero:     clamp(2.75rem, 11vw, 9rem);
+  --text-display:  clamp(2rem, 5.5vw, 3.5rem);
+  --text-title:    clamp(1.5rem, 3vw, 2rem);
+  --text-lede:     clamp(1.0625rem, 1.6vw, 1.25rem);
+  --text-body:     1.0625rem;
+  --text-small:    0.875rem;
+  --text-micro:    0.75rem;
+
+  /* --- motion ------------------------------------------------------------ */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ===========================================================================
+   BASE
+   =========================================================================== */
+
+:root {
+  color-scheme: dark;
+  /* The Terminal direction commits to a single dark look by design. */
+}
+
+html {
+  background-color: var(--color-ground);
+  /* Lenis drives scrolling; native smooth would fight it. */
+  scroll-behavior: auto;
+}
+
+body {
+  background-color: var(--color-ground);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Mono-forward identity: everything structural is mono. */
+h1, h2, h3, h4, h5, h6,
+nav, code, pre, kbd, samp, th,
+.u-mono {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+h1, h2, h3 {
+  color: var(--color-bright);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+a {
+  color: inherit;
+  text-decoration-color: var(--color-faint);
+  text-underline-offset: 0.25em;
+}
+a:hover { text-decoration-color: var(--color-accent); }
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-ground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Skip link — keyboard users land here first. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--color-accent);
+  color: var(--color-ground);
+  padding: 0.75rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: 700;
+}
+.skip-link:focus { left: 0.5rem; top: 0.5rem; }
+
+/* KaTeX inherits the surrounding color rather than shipping its own. */
+.katex { color: var(--color-bright); font-size: 1.05em; }
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+}
+
+/* Wide content must scroll inside itself, never the page body. */
+pre, table { max-width: 100%; }
+pre {
+  overflow-x: auto;
+  background: var(--color-raised) !important;
+  border: 1px solid var(--color-rule);
+  border-radius: 4px;
+  padding: 1rem 1.125rem;
+  font-size: var(--text-small);
+  line-height: 1.6;
+}
+
+/* Shiki dual-theme: this build commits to dark, so pin the dark variables. */
+.astro-code,
+.astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: transparent !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+/* ===========================================================================
+   REDUCED MOTION — static fallback, not shortened durations (PLAN.md §4)
+   =========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

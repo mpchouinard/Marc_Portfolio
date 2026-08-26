@@ -117,23 +117,54 @@ and almost no portfolio has them.
 
 ---
 
-## 4. Design tokens
+## 4. Design tokens — LOCKED 2026-08-26
 
-> ## ⛔ NOT YET LOCKED — UI WORK IS BLOCKED
->
-> `src/styles/global.css` currently holds only the Tailwind and KaTeX imports.
-> Per PLAN.md §6, **no agent may write UI until the palette and type scale are
-> signed off and pasted into this section verbatim.** Parallel agents building
-> against unfixed tokens is the documented top failure mode of this project.
->
-> Confirmed direction so far: **character/glyph-based mathematical background
-> effects** as the signature element (user request). Palette, faces, and scale
-> still pending.
+Direction: **"Terminal"**, chosen deliberately by the owner with PLAN.md §6's
+anti-pattern warning on the table. Near-black ground, a single phosphor accent,
+mono-forward. Because it *is* the common ML-portfolio look, the execution has to
+carry it — restraint, real typographic hierarchy, and one excellent signature
+moment rather than scattered effects.
+
+Tokens live in `src/styles/global.css` under `@theme`. Tailwind v4 is CSS-first:
+every token is automatically a utility (`--color-ground` → `bg-ground`,
+`--color-accent` → `text-accent`, `--text-title` → `text-title`). **There is no
+`tailwind.config.js` and there must never be one.**
+
+```
+ground   #0A0A0B    raised  #131316    sunken  #060607
+text     #D4D4D8    bright  #F4F4F5    muted   #8A8A93    faint  #52525B
+rule     #27272A    accent  #4ADE80    accent-dim #22C55E
+aurora-1 #0B3B2E (deep green)   aurora-2 #10394A (teal)   aurora-3 #241B3D (violet)
+
+--font-display / --font-mono   JetBrains Mono Variable   (identity: display, nav, labels, metrics, code)
+--font-body                    Inter Variable            (long-form case-study prose ONLY)
+
+--text-hero clamp(2.75rem,11vw,9rem) · --text-display · --text-title
+--text-lede · --text-body · --text-small · --text-micro
+--ease-out-expo
+```
+
+**One deliberate deviation from a pure Terminal look:** body prose uses Inter,
+not mono. Mono at paragraph length is genuinely hard to read and the case
+studies are meant to be read. Everything structural stays mono, so the identity
+holds. To go fully mono, point `--font-body` at the mono stack — one line.
+
+**Never write a raw hex value in a component.** If a colour you need does not
+exist as a token, that is a Wave 0 decision — ask, do not add one locally.
 
 **File ownership:** `src/styles/global.css` belongs to Wave 0 only. Wave 1+
-agents must never edit it. Need a token? Ask; don't add one locally.
+agents must never edit it, not even to add a single rule.
 
----
+### Signature element
+
+Character/glyph-based mathematical background — a canvas grid of mathematical
+glyphs whose brightness is driven by a real scalar field (summed sinusoids
+drifting over time), which **fades into a soft aurora gradient as the page
+scrolls**. Owner's brief: a front page with his name, where the moving
+math background resolves into "a cool gradient that is pleasant to the eyes."
+
+Explicitly NOT Matrix-style falling rain — that is the cliché the plan warns
+against. Everything else on the site stays quiet.
 
 ## 5. Motion rules (non-negotiable)
 

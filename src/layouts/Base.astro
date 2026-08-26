@@ -1,0 +1,59 @@
+---
+/**
+ * SHARED LAYOUT CONTRACT — owned by Wave 0 / the orchestrator.
+ * Wave 1 agent A may refine the chrome it renders (Nav/Footer), but the
+ * Props interface below is FIXED: three other agents code against it in
+ * parallel. Do not rename or remove a prop.
+ */
+import "../styles/global.css";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import { profile } from "../data/profile";
+
+export interface Props {
+  /** Page <title>. The site name is appended automatically. */
+  title: string;
+  /** Meta description. Required — every page gets one. */
+  description: string;
+  /** True when the page opens with a full-bleed hero, so the nav sits
+   *  transparently over it instead of on its own ruled bar. */
+  transparentNav?: boolean;
+  /** Suppress the default <main> padding for full-bleed pages. */
+  bleed?: boolean;
+}
+
+const { title, description, transparentNav = false, bleed = false } = Astro.props;
+
+const pageTitle = title === profile.name ? title : `${title} · ${profile.name}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="generator" content={Astro.generator} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <slot name="head" />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Nav transparent={transparentNav} />
+    <main id="main" class={bleed ? "" : "mx-auto w-full max-w-[72rem] px-6 py-16 md:px-10"}>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
