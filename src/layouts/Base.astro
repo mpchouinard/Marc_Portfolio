@@ -9,7 +9,7 @@ import "../styles/global.css";
 import Nav from "../components/Nav.astro";
 import GlyphField from "../components/GlyphField.astro";
 import Footer from "../components/Footer.astro";
-import { profile } from "../data/profile";
+import { profile, education, skills } from "../data/profile";
 
 export interface Props {
   /** Page <title>. The site name is appended automatically. */
@@ -27,6 +27,32 @@ const { title, description, transparentNav = false, bleed = false } = Astro.prop
 
 const pageTitle = title === profile.name ? title : `${title} · ${profile.name}`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+
+/**
+ * Person structured data. This is what search engines and LinkedIn-style
+ * unfurlers read, so it is worth getting right — but every field is drawn
+ * from profile.ts, never asserted here. `sameAs` omits empty links rather
+ * than emitting a broken URL.
+ */
+const sameAs = [profile.links.github, profile.links.linkedin].filter(Boolean);
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: profile.name,
+  email: `mailto:${profile.email}`,
+  url: Astro.site?.toString(),
+  description: profile.tagline,
+  ...(sameAs.length ? { sameAs } : {}),
+  alumniOf: education.map((e) => ({
+    "@type": "CollegeOrUniversity",
+    name: e.institution,
+  })),
+  knowsAbout: [
+    ...skills.languages.slice(0, 6),
+    ...skills.frameworks.slice(0, 6),
+  ],
+  address: { "@type": "PostalAddress", addressLocality: profile.location },
+};
 ---
 
 <!doctype html>
@@ -45,6 +71,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta name="twitter:card" content="summary_large_image" />
+
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(jsonLd)}
+    />
 
     <slot name="head" />
 

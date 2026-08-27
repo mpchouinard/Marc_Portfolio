@@ -11,6 +11,8 @@
 import { getCollection, render } from "astro:content";
 import Base from "../../layouts/Base.astro";
 import MetaBar from "../../components/MetaBar.astro";
+import ProjectArt from "../../components/ProjectArt.astro";
+import { Image } from "astro:assets";
 
 export async function getStaticPaths() {
   const entries = await getCollection("work");
@@ -33,6 +35,33 @@ const d = entry.data;
       <h1 class="mt-3 text-display text-bright">{d.title}</h1>
       <p class="mt-4 text-lede text-muted">{d.summary}</p>
     </header>
+
+    {/* Banner: a real screenshot when one exists, otherwise the generated
+        field art. Runs wider than the 68ch prose measure so each case study
+        opens with its own image rather than another wall of text. */}
+    <div class="mx-auto mb-12 max-w-[52rem]" data-reveal data-reveal-delay="60">
+      {
+        d.cover ? (
+          <Image
+            src={d.cover}
+            alt=""
+            widths={[640, 1040]}
+            sizes="(min-width: 900px) 52rem, 92vw"
+            class="aspect-[16/9] w-full border border-rule object-cover"
+            loading="eager"
+            decoding="async"
+          />
+        ) : (
+          <ProjectArt
+            id={entry.id}
+            domains={d.domains}
+            methods={d.methods}
+            stack={d.stack}
+            class="aspect-[16/9] w-full border border-rule"
+          />
+        )
+      }
+    </div>
 
     <div class="mx-auto max-w-[68ch]" data-reveal data-reveal-delay="80">
       <MetaBar

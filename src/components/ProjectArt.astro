@@ -1,0 +1,240 @@
+---
+/**
+ * ProjectArt — deterministic generative art for a project card that has no
+ * real screenshot yet (`work.cover` unset). Real screenshots don't exist for
+ * most projects, and a fake UI mockup would be dishonest, so this renders
+ * something that is unmistakably abstract art and genuinely *of* the
+ * project: a static iso-line (contour) plot of a scalar field seeded from
+ * the project's own id and shaped by its own taxonomy — the same
+ * mathematical family as the site's signature glyph field
+ * (`src/scripts/glyph-field.ts`'s summed, phase-shifted `sin(ax+bt)·cos(cy+dt)`
+ * terms), just sampled once at build time instead of animated on a canvas.
+ *
+ * ---------------------------------------------------------------------------
+ * Metadata -> geometry (the whole point of this component — a viewer can't
+ * decode it, but it means two projects can never collide and every image is
+ * genuinely derived from that project's own frontmatter):
+ *
+ *   id       -> FNV-1a hash -> mulberry32 seed -> each harmonic's spatial
+ *               frequencies (a, c) and phase. This is the uniqueness
+ *               guarantee: even two projects with identical domains/methods/
+ *               stack *counts* still get a different field, because their
+ *               ids differ.
+ *   methods  -> harmonicCount: one summed sin/cos term per method named
+ *               (clamped 2-5). More methods = more interfering terms = a
+ *               busier field, exactly like adding a term to the hero field.
+ *   stack    -> sampleCount: the sampling grid resolution per axis (clamped
+ *               7-13). More of the stack named = a finer lattice = more
+ *               contour detail resolved.
+ *   domains  -> symmetryOrder (clamped 1-4). Each step folds the sampling
+ *               coordinate across one more mirror axis (vertical, then
+ *               horizontal, then diagonal) before the field is evaluated, so
+ *               a project spanning more domains reads as more symmetric.
+ *
+ *   levelCount (how many iso-line bands get drawn) is derived from
+ *   harmonicCount rather than adding a fifth independent knob: a richer
+ *   harmonic series earns more bands to show it off.
+ *
+ * No Math.random(), no Date — every number above is a pure function of the
+ * project's own id/domains/methods/stack, so this SVG is byte-identical
+ * across builds.
+ * ---------------------------------------------------------------------------
+ */
+
+interface Props {
+  id: string;
+  domains: string[];
+  methods: string[];
+  stack: string[];
+  class?: string;
+}
+
+const { id, domains, methods, stack, class: className } = Astro.props;
+
+// viewBox is exactly 16:9 so it drops into the card's aspect-[16/9] box with
+// no cropping and no distortion.
+const VB_W = 320;
+const VB_H = 180;
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, v));
+}
+
+// -- seed: id -> 32-bit int (FNV-1a) -> mulberry32 float stream -------------
+// A small inline PRNG, not Math.random(): same id in, same stream out, on
+// every machine and every build, forever.
+function hashId(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed: number): () => number {
+  let a = seed | 0;
+  return function next(): number {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const rand = mulberry32(hashId(id));
+
+// -- metadata -> field parameters --------------------------------------------
+const harmonicCount = clamp(methods.length, 2, 5); // methods.length
+const sampleCount = clamp(stack.length + 5, 7, 13); // stack.length
+const symmetryOrder = clamp(domains.length, 1, 4); // domains.length
+const levelCount = clamp(harmonicCount, 2, 4); // derived from harmonicCount
+
+interface Harmonic {
+  a: number;
+  c: number;
+  phase: number;
+  weight: number;
+  cross: boolean;
+}
+
+const harmonics: Harmonic[] = Array.from({ length: harmonicCount }, (_, k) => ({
+  a: 1.2 + rand() * 3.2,
+  c: 1.2 + rand() * 3.2,
+  phase: rand() * Math.PI * 2,
+  weight: 1 / (k + 1),
+  cross: k % 2 === 1, // alternate term shape, echoing glyph-field's mixed terms
+}));
+
+const weightSum = harmonics.reduce((s, t) => s + t.weight, 0);
+
+// The scalar field itself — same family as the hero's summed sin*cos terms,
+// just static (no `t`) since this renders once at build time, not per frame.
+function field(x: number, y: number): number {
+  let sum = 0;
+  for (const t of harmonics) {
+    sum += t.cross
+      ? t.weight * Math.sin((x + y) * t.a + t.phase) * Math.cos((x - y) * t.c - t.phase)
+      : t.weight * Math.sin(x * t.a + t.phase) * Math.cos(y * t.c - t.phase);
+  }
+  return sum / weightSum; // normalized to roughly [-1, 1]
+}
+
+// domains.length folds the sampling coordinate across successive mirror axes
+// before the field is evaluated, so more domains -> more symmetric art.
+function fold(x: number, y: number): [number, number] {
+  let fx = x;
+  let fy = y;
+  if (symmetryOrder >= 2) fx = Math.abs(fx - 0.5) * 2;
+  if (symmetryOrder >= 3) fy = Math.abs(fy - 0.5) * 2;
+  if (symmetryOrder >= 4 && fx > fy) {
+    const t = fx;
+    fx = fy;
+    fy = t;
+  }
+  return [fx, fy];
+}
+
+// -- sample the grid ----------------------------------------------------------
+const N = sampleCount;
+const px = Array.from({ length: N }, (_, i) => (i / (N - 1)) * VB_W);
+const py = Array.from({ length: N }, (_, j) => (j / (N - 1)) * VB_H);
+const values: number[][] = Array.from({ length: N }, (_, j) =>
+  Array.from({ length: N }, (_, i) => {
+    const [fx, fy] = fold(i / (N - 1), j / (N - 1));
+    return field(fx, fy);
+  }),
+);
+
+// -- iso-lines: marching squares in segment form ------------------------------
+// (No polygon merging needed for line art — each crossing pair is emitted as
+// its own "M..L.." subpath, so a handful of <path> elements carry the whole
+// contour plot rather than one element per segment.)
+function crossing(
+  ax: number,
+  ay: number,
+  av: number,
+  bx: number,
+  by: number,
+  bv: number,
+  th: number,
+): [number, number] {
+  const t = (th - av) / (bv - av);
+  return [ax + (bx - ax) * t, ay + (by - ay) * t];
+}
+
+function contourPath(th: number): string {
+  let d = "";
+  for (let j = 0; j < N - 1; j++) {
+    for (let i = 0; i < N - 1; i++) {
+      const v0 = values[j][i];
+      const v1 = values[j][i + 1];
+      const v2 = values[j + 1][i + 1];
+      const v3 = values[j + 1][i];
+      const p0: [number, number] = [px[i], py[j]];
+      const p1: [number, number] = [px[i + 1], py[j]];
+      const p2: [number, number] = [px[i + 1], py[j + 1]];
+      const p3: [number, number] = [px[i], py[j + 1]];
+
+      // Find where the field crosses `th` on each of the 4 cell edges, in a
+      // fixed cyclic order (top, right, bottom, left) — deterministic, and
+      // exactly 2 or 4 crossings can occur per cell.
+      const pts: [number, number][] = [];
+      if ((v0 - th) * (v1 - th) < 0) pts.push(crossing(p0[0], p0[1], v0, p1[0], p1[1], v1, th));
+      if ((v1 - th) * (v2 - th) < 0) pts.push(crossing(p1[0], p1[1], v1, p2[0], p2[1], v2, th));
+      if ((v2 - th) * (v3 - th) < 0) pts.push(crossing(p2[0], p2[1], v2, p3[0], p3[1], v3, th));
+      if ((v3 - th) * (v0 - th) < 0) pts.push(crossing(p3[0], p3[1], v3, p0[0], p0[1], v0, th));
+
+      for (let k = 0; k + 1 < pts.length; k += 2) {
+        const [x1, y1] = pts[k];
+        const [x2, y2] = pts[k + 1];
+        d += `M${x1.toFixed(2)},${y1.toFixed(2)}L${x2.toFixed(2)},${y2.toFixed(2)} `;
+      }
+    }
+  }
+  return d;
+}
+
+const thresholds = Array.from({ length: levelCount }, (_, i) =>
+  levelCount === 1 ? 0 : -0.8 + (1.6 * i) / (levelCount - 1),
+);
+
+// Restraint (CLAUDE.md §4): mostly faint/rule, accent used sparingly on only
+// the band(s) closest to zero — the field's own "equilibrium" line.
+const rankByAbs = [...thresholds].sort((a, b) => Math.abs(a) - Math.abs(b));
+const emphasisTh = rankByAbs[0];
+const secondTh = rankByAbs.length > 1 ? rankByAbs[1] : null;
+
+function strokeFor(th: number): string {
+  if (th === emphasisTh) return "var(--color-accent)";
+  if (th === secondTh) return "var(--color-accent-dim)";
+  return "var(--color-faint)";
+}
+
+function widthFor(th: number): number {
+  if (th === emphasisTh) return 1.1;
+  if (th === secondTh) return 0.85;
+  return 0.6;
+}
+
+const contours = thresholds.map((th) => ({
+  d: contourPath(th),
+  stroke: strokeFor(th),
+  width: widthFor(th),
+}));
+---
+
+<svg
+  viewBox={`0 0 ${VB_W} ${VB_H}`}
+  preserveAspectRatio="xMidYMid meet"
+  fill="none"
+  aria-hidden="true"
+  class:list={["block w-full", className]}
+>
+  <rect x="0" y="0" width={VB_W} height={VB_H} fill="var(--color-sunken)" />
+  {
+    contours.map((c) => (
+      <path d={c.d} stroke={c.stroke} stroke-width={c.width} stroke-linecap="round" />
+    ))
+  }
+</svg>

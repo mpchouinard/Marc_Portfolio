@@ -6,6 +6,7 @@
  */
 import type { CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
+import ProjectArt from "./ProjectArt.astro";
 
 interface Props {
   work: CollectionEntry<"work">;
@@ -39,7 +40,7 @@ const chips = [...d.domains.slice(0, 3), ...d.methods.slice(0, 2)];
   ]}
 >
   {
-    d.cover && (
+    d.cover ? (
       <Image
         src={d.cover}
         alt=""
@@ -48,6 +49,14 @@ const chips = [...d.domains.slice(0, 3), ...d.methods.slice(0, 2)];
         class="mb-5 aspect-[16/9] w-full border border-rule object-cover"
         loading="lazy"
         decoding="async"
+      />
+    ) : (
+      <ProjectArt
+        id={work.id}
+        domains={d.domains}
+        methods={d.methods}
+        stack={d.stack}
+        class="mb-5 aspect-[16/9] w-full border border-rule"
       />
     )
   }

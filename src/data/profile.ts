@@ -18,8 +18,10 @@ export const profile = {
     // stores it as an unresolvable relative link.
     linkedin: "",
   },
+  // Every clause here is verifiable from the resume or the repos this site
+  // links to. Lead with the research, because that is the differentiator.
   tagline:
-    "BS/MS student in AI at WPI. Retrieval-augmented generation research, applied ML systems, and the infrastructure that makes them reproducible.",
+    "BS Computer Science and MS Artificial Intelligence at WPI, 2027. I benchmark retrieval for medical RAG on WPI's Turing cluster, and build applied ML systems end to end.",
 } as const;
 
 export const education = [
