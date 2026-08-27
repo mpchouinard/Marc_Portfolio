@@ -24,7 +24,7 @@ const d = entry.data;
 
 <Base title={d.title} description={d.summary}>
   <article>
-    <header class="mx-auto mb-12 max-w-[68ch]">
+    <header class="mx-auto mb-12 max-w-[68ch]" data-reveal>
       <p class="font-mono text-small uppercase tracking-wide text-muted">
         <a href="/work/" class="transition-colors hover:text-accent">Work</a>
         <span class="text-faint"> / </span>
@@ -34,7 +34,7 @@ const d = entry.data;
       <p class="mt-4 text-lede text-muted">{d.summary}</p>
     </header>
 
-    <div class="mx-auto max-w-[68ch]">
+    <div class="mx-auto max-w-[68ch]" data-reveal data-reveal-delay="80">
       <MetaBar
         kind={d.kind}
         status={d.status}

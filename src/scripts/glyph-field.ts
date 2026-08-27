@@ -69,6 +69,9 @@ const REROLL_RATE = 0.006; // fraction of cells whose glyph re-rolls per frame
 const RESIZE_DEBOUNCE_MS = 150;
 
 interface Palette {
+  /** Brightness bucket at/above which a cell is a "crest" and gets the
+   *  additive bloom pass. Stored on the palette so it moves with the ramp. */
+  crestBucket: number;
   /** Precomputed rgba() strings, indexed by a quantized brightness bucket,
    *  so the render loop never allocates a color string per cell per frame. */
   stops: string[];
@@ -115,31 +118,43 @@ function buildPalette(): Palette {
   const faint = hexToRgb(readCssVar("--color-faint", "#52525B"));
   const muted = hexToRgb(readCssVar("--color-muted", "#8A8A93"));
   const accent = hexToRgb(readCssVar("--color-accent", "#4ADE80"));
+  const bloomHot = hexToRgb(readCssVar("--color-bloom-hot", "#86EFAC"));
 
   const size = 128;
   const stops = new Array<string>(size);
-  const midpoint = 0.62; // brightness value below which cells stay faint->muted
+
+  // Vibrancy pass (owner asked for a more vibrant hero, same mechanic).
+  // The ramp is now three segments instead of two, and the accent band
+  // starts much earlier, so a far larger share of the field carries colour
+  // rather than sitting in the grey-green floor.
+  const mutedAt = 0.42; // was 0.62 — accent now begins far sooner
+  const hotAt = 0.86; // top of the ramp blooms past accent into bloom-hot
 
   for (let i = 0; i < size; i++) {
     const t = i / (size - 1);
     let rgb: [number, number, number];
     let alpha: number;
 
-    if (t < midpoint) {
-      const localT = t / midpoint;
+    if (t < mutedAt) {
+      const localT = t / mutedAt;
       rgb = lerpRgb(faint, muted, localT);
-      alpha = lerp(0.1, 0.3, localT);
+      alpha = lerp(0.14, 0.42, localT);
+    } else if (t < hotAt) {
+      const localT = (t - mutedAt) / (hotAt - mutedAt);
+      // Gentler curve than before (1.6 -> 1.15) so the climb to accent is
+      // a broad glow rather than a spike confined to rare crests.
+      rgb = lerpRgb(muted, accent, Math.pow(localT, 1.15));
+      alpha = lerp(0.42, 0.88, localT);
     } else {
-      const localT = (t - midpoint) / (1 - midpoint);
-      // Sharpen the approach to accent so only genuine crests fully glow.
-      rgb = lerpRgb(muted, accent, Math.pow(localT, 1.6));
-      alpha = lerp(0.3, 0.78, localT);
+      const localT = (t - hotAt) / (1 - hotAt);
+      rgb = lerpRgb(accent, bloomHot, localT);
+      alpha = lerp(0.88, 1, localT);
     }
 
     stops[i] = `rgba(${rgb[0] | 0}, ${rgb[1] | 0}, ${rgb[2] | 0}, ${alpha.toFixed(3)})`;
   }
 
-  return { stops };
+  return { stops, crestBucket: Math.floor(hotAt * (size - 1)) };
 }
 
 /** The scalar field. nx/ny are grid-normalized coordinates (roughly the
@@ -187,12 +202,16 @@ function computeGrid(cssWidth: number, cssHeight: number, previous: Grid | null)
 
 export interface GlyphFieldHandle {
   destroy(): void;
+  /** Feed scroll velocity (px/frame-ish) so the field reacts with inertia. */
+  setVelocity(v: number): void;
+  /** 0..1 global intensity. Lets the field thin out below the hero. */
+  setIntensity(v: number): void;
 }
 
 export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
   const ctx = canvas.getContext("2d");
   if (!ctx) {
-    return { destroy() {} };
+    return { destroy() {}, setVelocity() {}, setIntensity() {} };
   }
 
   let reduced = prefersReducedMotion();
@@ -210,6 +229,13 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
   let destroyed = false;
   let resizeTimer: number | undefined;
   let startTime = performance.now();
+  // Physics coupling: raw scroll velocity is fed in from Lenis, but the
+  // field reacts to a DAMPED copy of it. The damping is what makes it read
+  // as mass — the field keeps drifting briefly after the scroll stops and
+  // eases in rather than snapping to each new velocity.
+  let velocityTarget = 0;
+  let velocityDamped = 0;
+  let intensity = 1;
 
   function resizeCanvasToDisplaySize(): void {
     dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
@@ -231,6 +257,9 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
     const { cols, rows, cellSize, cssWidth, cssHeight, glyphIndices } = grid;
 
     ctx!.clearRect(0, 0, cssWidth, cssHeight);
+    // Global intensity: 1 in the hero, lower further down the page so the
+    // field persists without ever competing with body text.
+    ctx!.globalAlpha = intensity;
 
     const fontFamily = readCssVar(
       "--font-mono",
@@ -251,23 +280,60 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
       glyphIndices[idx] = Math.floor(Math.random() * GLYPHS.length);
     }
 
-    const scaleX = 1.0;
-    const scaleY = 1.0;
+    // Ease the damped velocity toward the latest reading. Critically damped
+    // enough that a flick imparts drift which decays over ~0.5s instead of
+    // tracking the scroll 1:1 (which would read as a glitch, not as mass).
+    velocityDamped += (velocityTarget - velocityDamped) * 0.08;
+    // Clamp so a violent fling can't shear the field into nonsense.
+    const shear = Math.max(-1, Math.min(1, velocityDamped / 45));
+
+    const lastBucket = palette.stops.length - 1;
+    const crestBucket = palette.crestBucket;
+    // Crest cells are collected during the main pass and re-drawn additively
+    // afterwards. Two passes with one composite switch beats switching
+    // globalCompositeOperation per cell.
+    const crestX: number[] = [];
+    const crestY: number[] = [];
+    const crestGlyph: number[] = [];
+
     let index = 0;
     for (let row = 0; row < rows; row++) {
-      const ny = (row / rows - 0.5) * 10 * scaleY;
+      const ny = (row / rows - 0.5) * 10;
+      // Scroll velocity displaces the sampling position vertically, so the
+      // pattern lags behind fast scrolling and settles when you stop.
+      const nyShear = ny + shear * 1.4;
       const py = row * cellSize + cellSize / 2;
       for (let col = 0; col < cols; col++, index++) {
-        const nx = (col / cols - 0.5) * 10 * scaleX;
-        const brightness = fieldValue(nx, ny, elapsedSeconds);
-        const bucket = Math.min(
-          palette.stops.length - 1,
-          Math.max(0, Math.floor(brightness * (palette.stops.length - 1))),
-        );
+        const nx = (col / cols - 0.5) * 10;
+        const brightness = fieldValue(nx, nyShear, elapsedSeconds);
+        const bucket = Math.min(lastBucket, Math.max(0, Math.floor(brightness * lastBucket)));
         ctx!.fillStyle = palette.stops[bucket];
         const px = col * cellSize + cellSize / 2;
-        ctx!.fillText(GLYPHS[glyphIndices[index]], px, py);
+        const glyph = glyphIndices[index];
+        ctx!.fillText(GLYPHS[glyph], px, py);
+
+        if (bucket >= crestBucket) {
+          crestX.push(px);
+          crestY.push(py);
+          crestGlyph.push(glyph);
+        }
       }
+    }
+
+    // Additive bloom: crests are drawn a second time with 'lighter', which
+    // sums into the pixels already there. That is what makes the brightest
+    // cells actually glow rather than just being a lighter green.
+    if (crestX.length > 0) {
+      ctx!.save();
+      ctx!.globalCompositeOperation = "lighter";
+      ctx!.globalAlpha = 0.5;
+      ctx!.fillStyle = readCssVar("--color-accent", "#4ADE80");
+      ctx!.shadowColor = readCssVar("--color-bloom-hot", "#86EFAC");
+      ctx!.shadowBlur = cellSize * 0.9;
+      for (let i = 0; i < crestX.length; i++) {
+        ctx!.fillText(GLYPHS[crestGlyph[i]], crestX[i], crestY[i]);
+      }
+      ctx!.restore();
     }
   }
 
@@ -363,5 +429,16 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
 
   window.addEventListener("astro:before-swap", destroy, { once: true });
 
-  return { destroy };
+  return {
+    destroy,
+    setVelocity(v: number) {
+      velocityTarget = v;
+      // A moving field must keep drawing even if the brightness animation
+      // is otherwise idle, so make sure the loop is alive while scrolling.
+      startLoopIfNeeded();
+    },
+    setIntensity(v: number) {
+      intensity = Math.max(0, Math.min(1, v));
+    },
+  };
 }

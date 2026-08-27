@@ -162,14 +162,15 @@ every token is automatically a utility (`--color-ground` → `bg-ground`,
 ground   #0A0A0B    raised  #131316    sunken  #060607
 text     #D4D4D8    bright  #F4F4F5    muted   #8A8A93    faint  #52525B
 rule     #27272A    accent  #4ADE80    accent-dim #22C55E
-aurora-1 #0B3B2E (deep green)   aurora-2 #10394A (teal)   aurora-3 #241B3D (violet)
+aurora-1 #08140E (near-black green)  aurora-2 #0E3320 (deep forest)  aurora-3 #14532D (moss)
+bloom-hot #86EFAC (light phosphor — glyph crests and the additive bloom pass)
 
 --font-display / --font-mono   JetBrains Mono Variable   (identity: display, nav, labels, metrics, code)
 --font-body                    Inter Variable            (long-form case-study prose ONLY)
 
 --text-hero clamp(2.75rem,11vw,9rem) · --text-display · --text-title
 --text-lede · --text-body · --text-small · --text-micro
---ease-out-expo
+--ease-out-expo · --ease-spring · --ease-settle   (see §5)
 ```
 
 **One deliberate deviation from a pure Terminal look:** body prose uses Inter,
@@ -185,14 +186,25 @@ agents must never edit it, not even to add a single rule.
 
 ### Signature element
 
-Character/glyph-based mathematical background — a canvas grid of mathematical
-glyphs whose brightness is driven by a real scalar field (summed sinusoids
-drifting over time), which **fades into a soft aurora gradient as the page
-scrolls**. Owner's brief: a front page with his name, where the moving
-math background resolves into "a cool gradient that is pleasant to the eyes."
+A character/glyph mathematical field — one document-level canvas of maths glyphs
+whose brightness is driven by a real scalar field (summed sinusoids drifting
+over time), with an additive `lighter` pass so crests genuinely bloom.
 
-Explicitly NOT Matrix-style falling rain — that is the cliché the plan warns
-against. Everything else on the site stays quiet.
+Two owner decisions are baked in here:
+
+1. **The gradient is phosphor green, never blue.** The first version resolved
+   into teal + violet and was rejected. The whole transition now stays in one
+   hue family. Do not reintroduce a second hue.
+2. **The field follows the reader down the page.** It is mounted once in
+   `Base.astro`, fixed behind all content, and the hero scrubs its intensity
+   from 1 to ~0.14 rather than fading it to nothing. There must only ever be
+   ONE field canvas per document — `window.__glyphField` assumes it.
+
+Scroll velocity from Lenis is piped into the field, damped, so fast scrolling
+shears the pattern and it settles afterwards. That is the "adhering to physics"
+feel; keep it damped, never 1:1 with scroll.
+
+Explicitly NOT Matrix-style falling rain.
 
 ## 5. Motion rules
 
@@ -245,13 +257,17 @@ src/
   content/work/*.mdx    # one file per project
   data/profile.ts       # identity/education/experience source of truth
   styles/global.css     # tokens — Wave 0 only
+  scripts/
+    motion.ts           # Lenis + GSAP wiring, reduced-motion, scroll velocity
+    glyph-field.ts      # the canvas engine
+    reveal.ts           # the declarative reveal engine (§5)
+  components/           # Nav, Footer, Hero, GlyphField, cards, tables
+  layouts/Base.astro    # shared shell; Props interface is FIXED
   pages/
-    index.astro         # WAVE 0 PLACEHOLDER — Wave 1 replaces
-    work/[...slug].astro# WAVE 0 PLACEHOLDER — Wave 1 agent B replaces
+    index.astro         # hero + selected work
+    work/index.astro    # timeline + faceted browser
+    work/[...slug].astro# case study template
 ```
-
-Both files marked `WAVE 0 PLACEHOLDER` exist purely to prove the pipeline
-compiles. Keep their data plumbing, replace their markup.
 
 ---
 

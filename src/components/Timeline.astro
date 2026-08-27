@@ -46,13 +46,13 @@ const KIND_META: Record<Kind, { label: string; class: string }> = {
 
 {
   sorted.length > 0 && (
-    <ol class="relative ml-1 border-l border-rule">
+    <ol class="relative ml-1 border-l border-rule" data-reveal-group>
       {sorted.map((entry) => {
         const d = entry.data;
         const ongoing = !d.period.end;
         const meta = KIND_META[d.kind];
         return (
-          <li class="relative py-8 pl-7 last:pb-0 sm:pl-9">
+          <li class="relative py-8 pl-7 last:pb-0 sm:pl-9" data-reveal>
             <span
               aria-hidden="true"
               class:list={[

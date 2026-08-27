@@ -28,6 +28,8 @@ function ensurePlugins(): void {
 }
 
 /** True when the user has asked the OS/browser for reduced motion. */
+const velocitySubscribers = new Set<(v: number) => void>();
+
 export function prefersReducedMotion(): boolean {
   return (
     typeof window !== "undefined" &&
@@ -84,6 +86,13 @@ export function initSmoothScroll(): () => void {
 
   lenis.on("scroll", ScrollTrigger.update);
 
+  // Broadcast scroll velocity so decorative layers can react with inertia.
+  // Lenis reports velocity directly, which is far steadier than
+  // differencing scrollY by hand across frames.
+  lenis.on("scroll", (e: { velocity: number }) => {
+    for (const fn of velocitySubscribers) fn(e.velocity);
+  });
+
   tickerCallback = (time: number) => {
     // gsap.ticker reports elapsed time in seconds; lenis.raf wants ms.
     lenis?.raf(time * 1000);
@@ -113,4 +122,14 @@ function teardown(): void {
 
 /** Shared gsap/ScrollTrigger handles for the other motion files to reuse
  *  without each registering the plugin separately. */
+/**
+ * Subscribe to smooth-scroll velocity. Returns an unsubscribe function.
+ * Emits nothing under reduced motion (Lenis is never constructed), so
+ * consumers automatically fall still rather than needing their own guard.
+ */
+export function onScrollVelocity(fn: (v: number) => void): () => void {
+  velocitySubscribers.add(fn);
+  return () => velocitySubscribers.delete(fn);
+}
+
 export { gsap, ScrollTrigger };

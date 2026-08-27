@@ -31,6 +31,7 @@ const chips = [...d.domains.slice(0, 3), ...d.methods.slice(0, 2)];
 
 <a
   href={`/work/${work.id}/`}
+  data-reveal
   class:list={[
     "group relative block border border-rule bg-raised transition-colors duration-200 ease-out-expo hover:border-accent-dim focus-visible:border-accent",
     d.featured ? "p-6 sm:p-7" : "p-5",

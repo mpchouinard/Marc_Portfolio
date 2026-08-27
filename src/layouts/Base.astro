@@ -7,6 +7,7 @@
  */
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
+import GlyphField from "../components/GlyphField.astro";
 import Footer from "../components/Footer.astro";
 import { profile } from "../data/profile";
 
@@ -46,14 +47,103 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="twitter:card" content="summary_large_image" />
 
     <slot name="head" />
+
+    {/*
+      REVEAL GUARD — must run BEFORE first paint, and must be inline/blocking.
+      If the `js-reveal` class is added later (from a module script), the
+      browser has already painted the elements visible and then *transitions*
+      them to the hidden state — content visibly fades OUT before fading back
+      in on scroll. Setting it here means elements are hidden from the very
+      first frame, so there is no flash and no backwards transition.
+
+      Reduced motion never gets the class, so nothing is ever hidden for
+      those users. It is wrapped in try/catch so that a failure here can only
+      ever result in the fully-visible page, never a blank one.
+    */}
+    <script is:inline>
+      try {
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          document.documentElement.classList.add("js-reveal");
+        }
+      } catch (e) {}
+    </script>
   </head>
 
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
+
+    {/* ONE glyph-field canvas for the whole document, fixed behind all
+        content. The hero drives it to full intensity; below the hero it
+        thins out but never stops, so the field follows the reader down the
+        page. Decorative only — aria-hidden, not focusable, pointer-events
+        none, and pinned behind every section via z-index. */}
+    <div class="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
+      <GlyphField />
+    </div>
     <Nav transparent={transparentNav} />
     <main id="main" class={bleed ? "" : "mx-auto w-full max-w-[72rem] px-6 py-16 md:px-10"}>
       <slot />
     </main>
     <Footer />
+
+    <style is:global>
+      /*
+        REVEAL — the hidden start state is scoped to `html.js-reveal`, which
+        reveal.ts adds to <html> only after confirming JS is running AND
+        motion is allowed. Without that class nothing here applies, so a
+        no-JS visitor or a crawler sees the fully composed page. This is why
+        there is no unconditional `opacity: 0` anywhere in the codebase.
+      */
+      html.js-reveal [data-reveal] {
+        opacity: 0;
+        transform: translate3d(0, var(--reveal-distance), 0);
+        transition:
+          opacity var(--reveal-duration) var(--ease-settle),
+          transform var(--reveal-duration) var(--ease-spring);
+        transition-delay: var(--reveal-delay, 0ms);
+        will-change: opacity, transform;
+      }
+
+      html.js-reveal [data-reveal].is-revealed {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+
+      /* Belt and braces: even if js-reveal were somehow left on, a
+         reduced-motion visitor must never see a hidden element. */
+      @media (prefers-reduced-motion: reduce) {
+        html.js-reveal [data-reveal] {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+      }
+    </style>
+
+    <script>
+      import { initReveal } from "../scripts/reveal";
+      import { initSmoothScroll, onScrollVelocity, prefersReducedMotion } from "../scripts/motion";
+
+      initReveal();
+      document.addEventListener("astro:page-load", initReveal);
+
+      // Smooth scroll is initialised here (not only in the hero) so every
+      // page gets it, and so the glyph field receives velocity site-wide.
+      if (!prefersReducedMotion()) {
+        initSmoothScroll();
+
+        const pipeVelocity = () => {
+          const field = (window as any).__glyphField;
+          if (!field) return false;
+          onScrollVelocity((v: number) => field.setVelocity(v));
+          return true;
+        };
+        // The field may mount after this script runs, so wait for its event
+        // if it isn't ready yet.
+        if (!pipeVelocity()) {
+          window.addEventListener("glyphfield:ready", pipeVelocity, { once: true });
+        }
+      }
+    </script>
   </body>
 </html>

@@ -16,8 +16,11 @@ results:
     unit: "%"
 artifacts:
   - type: repo
-    url: "https://github.com/mpchouinard"
+    url: "https://github.com/mpchouinard/RNNPopGenerator"
     label: "Source on GitHub"
+  - type: dataset
+    url: "https://github.com/music-x-lab/POP909-Dataset"
+    label: "POP909 dataset"
 summary: "PyTorch RNN that generates pop music as readable sheet music, using an interval-based token system that cuts vocabulary size by 80%."
 featured: false
 ---
@@ -34,7 +37,8 @@ capacity on a transformation that is musically trivial.
 
 ## Data
 
-- **Source:** MIDI datasets, converted through an automated tokenization pipeline
+- **Source:** [POP909](https://github.com/music-x-lab/POP909-Dataset) — 909 pop
+  songs in MIDI, converted through an automated tokenization pipeline
 - **Representation:** interval-based tokens — the *distance* between notes rather than absolute pitch
 - **Output format:** generated tokens are piped back to sheet music via music21, so results are immediately readable and playable
 
@@ -74,5 +78,5 @@ generated sheet music at the other end.
 
 <ArtifactList artifacts={frontmatter.artifacts} />
 
-{/* TODO(marc): confirm repo URL. A rendered score image and an audio clip would
-     make this project land far harder than prose. */}
+{/* TODO(marc): a rendered score image and an audio clip would make this land
+     far harder than prose. The repo generates 20 pieces by default. */}
