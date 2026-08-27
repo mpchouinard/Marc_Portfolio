@@ -88,10 +88,12 @@ export const experience = [
     org: "Code Ninjas",
     start: "2024-01",
     end: null,
-    bullets: [
-      // TODO(marc): 2–3 bullets. What ages, what languages, how many students?
-      "Instructor — teaching programming fundamentals to students.",
-    ],
+    // TODO(marc): 2-3 real bullets. What ages do you teach, which languages,
+    // roughly how many students? Deliberately EMPTY until you supply them —
+    // the previous placeholder ("teaching programming fundamentals to
+    // students") was invented copy and was shipping to the live page, which
+    // CLAUDE.md §3 forbids. An empty role renders as title + dates only.
+    bullets: [] as string[],
   },
 ] as const;
 

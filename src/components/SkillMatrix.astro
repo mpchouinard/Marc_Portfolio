@@ -1,0 +1,163 @@
+---
+/**
+ * SkillMatrix — the skills section, made evidential rather than a plain list.
+ *
+ * profile.skills (display case: "Hugging Face", "AWS (EC2, RDS)") is
+ * cross-referenced against the real `stack` field of every `work` collection
+ * entry (lowercase-hyphenated tokens: "huggingface", "pytorch"). A skill that
+ * matches links straight to the project(s) that evidence it — a real href,
+ * computed from real data. Nothing else changes what's shown: no rating, no
+ * percentage, no invented years-of-experience. A skill with no matching
+ * project is shown just as plainly, in a lower-contrast tier captioned
+ * "coursework / no public project" rather than hidden, ranked, or faked.
+ *
+ * Fully server-rendered: complete and readable with JS disabled. The only
+ * "interactivity" is a CSS-only group-hover/focus-within treatment — hovering
+ * or tabbing into a skill row brightens its own evidence links. No JS, no
+ * React island: the evidence links are already visible, so a script would
+ * only be replacing a hover style JS doesn't need to own.
+ */
+import { skills } from "../data/profile";
+import { getCollection } from "astro:content";
+
+const work = await getCollection("work");
+
+/**
+ * Normalises a display-case skill name ("Hugging Face") and a lowercase-
+ * hyphenated stack token ("huggingface") onto the same key, so the two
+ * vocabularies can be compared at all:
+ *
+ *   1. lowercase
+ *   2. drop parenthetical detail — "AWS (EC2, RDS)" keys on "aws"; no
+ *      project's stack tags EC2/RDS separately, so keeping them would just
+ *      make "AWS" fail to match its own bracketed self.
+ *   3. hand-disambiguate the punctuation-bearing language names — "C",
+ *      "C++", "C#", and ".NET" would all collapse to the same key ("c") once
+ *      punctuation is stripped, which is wrong even though none of them
+ *      happen to match a project today.
+ *   4. strip every remaining space/hyphen/punctuation character.
+ *
+ * Proof this pairs "Hugging Face" with "huggingface":
+ *   normalizeToken("Hugging Face") -> "hugging face" -> "huggingface"
+ *   normalizeToken("huggingface")  -> "huggingface" (already normal form)
+ *   -> equal, so the RAG case study (stack: [..."huggingface"...]) evidences
+ *      the "Hugging Face" skill.
+ */
+function normalizeToken(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/c\+\+/g, "cpp")
+    .replace(/c#/g, "csharp")
+    .replace(/\.net\b/g, "dotnet")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+interface ProjectRef {
+  id: string;
+  title: string;
+}
+
+// normalized stack token -> every project whose `stack` array carries it.
+const stackIndex = new Map<string, ProjectRef[]>();
+for (const entry of work) {
+  for (const raw of entry.data.stack) {
+    const key = normalizeToken(raw);
+    const bucket = stackIndex.get(key) ?? [];
+    if (!bucket.some((p) => p.id === entry.id)) {
+      bucket.push({ id: entry.id, title: entry.data.title });
+    }
+    stackIndex.set(key, bucket);
+  }
+}
+
+interface SkillEvidence {
+  name: string;
+  projects: ProjectRef[];
+}
+
+const categories: { key: keyof typeof skills; label: string }[] = [
+  { key: "languages", label: "Languages" },
+  { key: "frameworks", label: "Frameworks" },
+  { key: "tools", label: "Tools" },
+];
+
+const groups = categories.map(({ key, label }) => ({
+  label,
+  skills: skills[key].map(
+    (name): SkillEvidence => ({
+      name,
+      projects: stackIndex.get(normalizeToken(name)) ?? [],
+    }),
+  ),
+}));
+
+// A real, computed count — not a percentage, not a rating. Reported plainly
+// so the reader can see how the tiers below break down before reading them.
+const allSkills = groups.flatMap((g) => g.skills);
+const evidencedCount = allSkills.filter((s) => s.projects.length > 0).length;
+const totalCount = allSkills.length;
+---
+
+<section id="skills" class="mx-auto w-full max-w-[72rem] px-6 py-24 md:px-10 md:py-32">
+  <header class="mb-4 border-b border-rule pb-4" data-reveal>
+    <h2 class="font-mono text-micro uppercase tracking-[0.2em] text-faint">Skills</h2>
+    <p class="mt-3 max-w-[46rem] text-small text-muted">
+      Cross-referenced against the stack fields of the projects on this
+      site, not self-rated. A linked skill has a public artifact behind it.
+      An unlinked one just means nothing here demonstrates it yet — no
+      score, no ranking, no claim either way.
+    </p>
+  </header>
+
+  <p class="mb-8 font-mono text-micro uppercase tracking-wide text-faint" data-reveal>
+    {evidencedCount} of {totalCount} skills link to a project below
+  </p>
+
+  <div class="flex flex-col gap-10" data-reveal-group>
+    {
+      groups.map((group) => (
+        <div data-reveal>
+          <h3 class="mb-3 font-mono text-micro uppercase tracking-widest text-muted">
+            {group.label}
+          </h3>
+          <ul class="flex flex-col divide-y divide-rule/60 border-t border-rule">
+            {group.skills.map((skill) => {
+              const hasEvidence = skill.projects.length > 0;
+              return (
+                <li class="group flex flex-wrap items-center gap-x-4 gap-y-1.5 py-2.5">
+                  <span
+                    class:list={[
+                      "min-w-[10rem] font-mono text-small",
+                      hasEvidence ? "text-text" : "text-faint",
+                    ]}
+                  >
+                    {skill.name}
+                  </span>
+                  {hasEvidence ? (
+                    <ul class="flex flex-wrap gap-1.5">
+                      {skill.projects.map((p) => (
+                        <li>
+                          <a
+                            href={`/work/${p.id}/`}
+                            class="inline-block rounded-sm border border-accent-dim/50 px-2 py-0.5 font-mono text-micro text-accent-dim transition-colors duration-200 ease-out-expo group-hover:border-accent group-hover:text-accent group-focus-within:border-accent group-focus-within:text-accent hover:bg-accent hover:text-ground focus-visible:bg-accent focus-visible:text-ground"
+                          >
+                            {p.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span class="font-mono text-micro uppercase tracking-wide text-faint/70">
+                      no linked project
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+</section>

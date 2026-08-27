@@ -10,6 +10,9 @@
 import Base from "../layouts/Base.astro";
 import Hero from "../components/Hero.astro";
 import ProjectCard from "../components/ProjectCard.astro";
+import ExperienceRuns from "../components/ExperienceRuns.astro";
+import SkillMatrix from "../components/SkillMatrix.astro";
+import EducationPanel from "../components/EducationPanel.astro";
 import { getCollection } from "astro:content";
 import { profile } from "../data/profile";
 
@@ -45,4 +48,20 @@ const featured = (await getCollection("work"))
       </section>
     )
   }
+
+  {/* Roles on one shared time axis — the overlap is the point, and a
+      bulleted list hides it. */}
+  <section class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
+    <ExperienceRuns />
+  </section>
+
+  {/* Skills cross-referenced against the projects that actually evidence
+      them. Unlinked skills are shown plainly rather than padded out. */}
+  <section class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
+    <SkillMatrix />
+  </section>
+
+  <section class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
+    <EducationPanel />
+  </section>
 </Base>
