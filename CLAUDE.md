@@ -51,7 +51,7 @@ schema. Everything on the site is a projection of this.
 ```ts
 const work = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/work" }),
-  schema: z.object({
+  schema: ({ image }) => z.object({
     title: z.string(),
     kind: z.enum(["research", "coursework", "personal", "industry"]),
     period: z.object({ start: z.date(), end: z.date().optional() }),
@@ -81,10 +81,24 @@ const work = defineCollection({
 
     summary: z.string().max(180),              // one line, used in cards + resume
     featured: z.boolean().default(false),
-    cover: z.string().optional(),
+    cover: image().optional(),                 // ./covers/<name>.png, relative to the MDX
   }),
 });
 ```
+
+### Cover images
+
+`cover` uses Astro's `image()` helper, not a plain string. Drop the file in
+`src/content/work/covers/` and reference it **relative to the MDX**:
+
+```yaml
+cover: "./covers/model-builder.png"
+```
+
+That buys build-time WebP conversion, a `srcset`, intrinsic width/height (so
+cards never shift as images load), and a hard build error on a wrong path.
+`ProjectCard.astro` renders it at 16/9. A missing `cover` renders no image at
+all — never a placeholder graphic.
 
 **Four views, one schema.** Write a project once, get: the timeline, the faceted
 browser, the case-study page, and the generated resume. If you find yourself

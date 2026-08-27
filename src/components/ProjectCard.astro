@@ -5,6 +5,7 @@
  * nested inside it.
  */
 import type { CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
 
 interface Props {
   work: CollectionEntry<"work">;
@@ -37,6 +38,19 @@ const chips = [...d.domains.slice(0, 3), ...d.methods.slice(0, 2)];
     d.featured ? "p-6 sm:p-7" : "p-5",
   ]}
 >
+  {
+    d.cover && (
+      <Image
+        src={d.cover}
+        alt=""
+        widths={[400, 800]}
+        sizes="(min-width: 768px) 34rem, 92vw"
+        class="mb-5 aspect-[16/9] w-full border border-rule object-cover"
+        loading="lazy"
+        decoding="async"
+      />
+    )
+  }
   {
     d.featured && (
       <span class="absolute right-5 top-5 font-mono text-micro font-bold uppercase tracking-widest text-accent">

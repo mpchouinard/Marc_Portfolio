@@ -3,7 +3,7 @@ import { glob } from "astro/loaders";
 
 const work = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/work" }),
-  schema: z.object({
+  schema: ({ image }) => z.object({
     title: z.string(),
     kind: z.enum(["research", "coursework", "personal", "industry"]),
     period: z.object({ start: z.date(), end: z.date().optional() }),
@@ -36,7 +36,7 @@ const work = defineCollection({
 
     summary: z.string().max(180),              // one line, used in cards + resume
     featured: z.boolean().default(false),
-    cover: z.string().optional(),
+    cover: image().optional(),          // ./covers/<name>.png, relative to the MDX
   }),
 });
 
