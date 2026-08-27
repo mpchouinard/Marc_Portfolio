@@ -1,129 +1,113 @@
 ---
 /**
- * EducationPanel — the academic record framed as a model card: the ML-world
- * artifact, used sincerely. Labelled spec fields instead of a paragraph of
- * prose, GPA promoted to one prominent readout (not a /4.0 gauge — that would
- * imply a precision the source data doesn't carry), coursework as a dense
- * mono chip grid. Every value comes straight from `src/data/profile.ts`;
- * nothing here is retyped or invented.
+ * Education — the academic record as a ledger, not a card.
+ *
+ * The dates live in `Trajectory.astro` (education is the spine of that
+ * chart), so this component deliberately does NOT repeat a timeline. It
+ * carries the things the chart cannot: the standing, the honors, and the
+ * actual coursework.
+ *
+ * Form: hairline rules and typographic contrast rather than a bordered box.
+ * The GPA is set at display scale because it is the one number here that a
+ * reader is actually looking for.
+ *
+ * Every value comes from `src/data/profile.ts`. Nothing is retyped.
  */
 import { education } from "../data/profile";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-// Parse "YYYY-MM" from integers only — never `new Date("YYYY-MM")`, which V8
-// reads as UTC midnight and can print the previous day/month once formatted
-// against a local timezone.
-function formatYM(ym: string): string {
-  const [year, month] = ym.split("-").map(Number);
-  return `${MONTHS[month - 1]} ${year}`;
+/**
+ * Pull the numerator/denominator out of the real honors string
+ * ("GPA 3.90 / 4.0") instead of hardcoding it, so editing profile.ts is
+ * enough to change the site. Falls back to rendering the honor verbatim
+ * as a plain line if the shape ever changes.
+ */
+function extractGpa(honors: readonly string[]) {
+  for (const h of honors) {
+    const m = h.match(/GPA\s*([\d.]+)\s*\/\s*([\d.]+)/i);
+    if (m) return { value: m[1], scale: m[2], source: h };
+  }
+  return null;
 }
-
-const cards = education.map((edu) => {
-  // The GPA honor reads "GPA 3.90 / 4.0" — pull the two numbers out of that
-  // exact string (never retyped) so it can stand alone as a prominent
-  // readout. If the string ever stops matching, fall back to leaving it in
-  // the plain honors list rather than silently dropping it.
-  const gpaHonor = edu.honors.find((h) => /^gpa\b/i.test(h.trim()));
-  const gpaMatch = gpaHonor?.match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
-  const gpaScore = gpaMatch?.[1] ?? null;
-  const gpaScale = gpaMatch?.[2] ?? null;
-  const otherHonors = gpaScore ? edu.honors.filter((h) => h !== gpaHonor) : edu.honors;
-
-  return {
-    ...edu,
-    startText: formatYM(edu.start),
-    endText: formatYM(edu.end),
-    gpaScore,
-    gpaScale,
-    otherHonors,
-  };
-});
 ---
 
-<section aria-labelledby="education-heading">
-  <h2 id="education-heading" class="text-title text-bright" data-reveal>
-    Education
-  </h2>
+<section aria-labelledby="education-heading" data-reveal>
+  <header class="mb-10 border-b border-rule pb-4">
+    <h2 id="education-heading" class="font-mono text-micro uppercase tracking-[0.2em] text-faint">
+      Education
+    </h2>
+  </header>
 
   {
-    cards.map((edu) => (
-      <div class="mt-6 rounded-md border border-rule bg-raised" data-reveal>
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-rule px-5 py-3">
-          <span class="font-mono text-micro uppercase tracking-widest text-faint">
-            model_card // education
-          </span>
-          {edu.expected && (
-            <span class="rounded-sm border border-dashed border-accent-dim px-1.5 py-0.5 font-mono text-micro uppercase tracking-wide text-accent">
-              expected
-            </span>
-          )}
-        </div>
+    education.map((edu) => {
+      const gpa = extractGpa(edu.honors);
+      const otherHonors = edu.honors.filter((h) => !gpa || h !== gpa.source);
 
-        <dl class="grid grid-cols-1 gap-x-6 gap-y-4 px-5 py-4 font-mono text-small sm:grid-cols-2">
-          <div class="sm:col-span-2">
-            <dt class="text-micro uppercase tracking-wide text-faint">Institution</dt>
-            <dd class="mt-1 text-bright">{edu.institution}</dd>
-          </div>
-
-          <div class="sm:col-span-2">
-            <dt class="text-micro uppercase tracking-wide text-faint">Degree</dt>
-            <dd class="mt-1 text-text">{edu.degree}</dd>
-          </div>
-
-          <div>
-            <dt class="text-micro uppercase tracking-wide text-faint">Enrolled</dt>
-            <dd class="mt-1 text-text">{edu.startText}</dd>
-          </div>
-
-          <div>
-            <dt class="text-micro uppercase tracking-wide text-faint">Graduation</dt>
-            <dd class="mt-1 text-text">
-              {edu.endText}
-              {edu.expected && <span class="text-muted"> (expected)</span>}
-            </dd>
-          </div>
-
-          {edu.gpaScore && (
-            <div class="sm:col-span-2">
-              <dt class="text-micro uppercase tracking-wide text-faint">GPA</dt>
-              <dd class="mt-1 flex items-baseline gap-1.5">
-                <span class="text-title text-accent">{edu.gpaScore}</span>
-                <span class="text-small text-faint">/ {edu.gpaScale}</span>
-              </dd>
+      return (
+        <div data-reveal-group>
+          {/* Standing: the degree reads as the headline, the GPA as the
+              single number worth setting large. */}
+          <div
+            class="flex flex-col gap-8 border-b border-rule pb-10 sm:flex-row sm:items-end sm:justify-between"
+            data-reveal
+          >
+            <div>
+              <p class="font-mono text-micro uppercase tracking-[0.2em] text-faint">
+                {edu.institution}
+              </p>
+              <p class="mt-2 max-w-[28ch] font-mono text-title leading-tight text-bright">
+                {edu.degree}
+              </p>
             </div>
-          )}
-        </dl>
 
-        {edu.otherHonors.length > 0 && (
-          <div class="border-t border-rule px-5 py-4">
-            <span class="font-mono text-micro uppercase tracking-wide text-faint">Honors</span>
-            <ul class="mt-2 flex flex-col gap-1.5" data-reveal-group>
-              {edu.otherHonors.map((h) => (
-                <li class="font-mono text-small text-text" data-reveal>
-                  {h}
+            {gpa && (
+              <div class="flex items-end gap-6">
+                <div>
+                  <p class="font-mono text-micro uppercase tracking-[0.2em] text-faint">GPA</p>
+                  <p class="font-mono text-display leading-none text-accent">
+                    {gpa.value}
+                    <span class="text-lede text-faint"> / {gpa.scale}</span>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Honors — hairline rows, no chips, no boxes. */}
+          {otherHonors.length > 0 && (
+            <ul class="border-b border-rule" data-reveal>
+              {otherHonors.map((h) => (
+                <li class="flex items-baseline gap-4 border-t border-rule/50 py-3 first:border-t-0">
+                  <span class="font-mono text-micro uppercase tracking-widest text-faint">
+                    honor
+                  </span>
+                  <span class="font-mono text-small text-text">{h}</span>
                 </li>
               ))}
             </ul>
-          </div>
-        )}
+          )}
 
-        {edu.coursework.length > 0 && (
-          <div class="border-t border-rule px-5 py-4">
-            <span class="font-mono text-micro uppercase tracking-wide text-faint">Coursework</span>
-            <div class="mt-2 flex flex-wrap gap-1.5" data-reveal-group>
-              {edu.coursework.map((c) => (
-                <span
-                  class="rounded-sm border border-rule px-2 py-0.5 font-mono text-micro text-muted"
-                  data-reveal
-                >
-                  {c}
-                </span>
-              ))}
+          {/* Coursework — a dense ruled index, numbered so it reads as a
+              record rather than a tag cloud. */}
+          {edu.coursework.length > 0 && (
+            <div class="pt-8" data-reveal>
+              <p class="mb-4 font-mono text-micro uppercase tracking-[0.2em] text-faint">
+                Coursework
+                <span class="ml-2 text-faint/70">{edu.coursework.length}</span>
+              </p>
+              <ol class="grid grid-cols-1 gap-x-10 sm:grid-cols-2 lg:grid-cols-3">
+                {edu.coursework.map((course, i) => (
+                  <li class="flex items-baseline gap-3 border-t border-rule/50 py-2.5 font-mono text-small">
+                    <span class="tabular-nums text-micro text-faint">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span class="text-text">{course}</span>
+                  </li>
+                ))}
+              </ol>
             </div>
-          </div>
-        )}
-      </div>
-    ))
+          )}
+        </div>
+      );
+    })
   }
 </section>

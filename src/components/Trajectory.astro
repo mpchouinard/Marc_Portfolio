@@ -1,0 +1,273 @@
+---
+/**
+ * Trajectory — the container made visible.
+ *
+ * PLAN.md §2 argues that education, research, and personal work belong on ONE
+ * spine rather than three disconnected lists, because the trajectory is the
+ * story. This component is that argument applied to the whole record: the
+ * degree is the spine, roles run beneath it, and projects run beneath those,
+ * all against a single shared month axis with a NOW marker.
+ *
+ * Everything is computed from real data — `profile.ts` for education and
+ * roles, the `work` collection for projects. Nothing here is authored copy.
+ *
+ * Geometry note: months are converted to an absolute integer index
+ * (`year * 12 + month`) rather than parsed through `new Date("YYYY-MM")`,
+ * which is timezone-sensitive and can shift a bar by a whole month depending
+ * on the build machine.
+ */
+import { education, experience } from "../data/profile";
+import { getCollection } from "astro:content";
+
+type Lane = {
+  label: string;
+  sublabel: string;
+  startIdx: number;
+  endIdx: number;
+  ongoing: boolean;
+  rangeText: string;
+  href?: string;
+  bullets?: string[];
+};
+
+const toIdx = (year: number, month: number) => year * 12 + (month - 1);
+
+function parseYm(s: string): number {
+  const [y, m] = s.split("-").map(Number);
+  return toIdx(y, m);
+}
+
+const now = new Date();
+const nowIdx = toIdx(now.getFullYear(), now.getMonth() + 1);
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const fmtIdx = (idx: number) => `${MONTHS[idx % 12]} ${Math.floor(idx / 12)}`;
+
+// --- education lane --------------------------------------------------------
+const eduLanes: Lane[] = education.map((e) => {
+  const startIdx = parseYm(e.start);
+  const endIdx = parseYm(e.end);
+  return {
+    label: e.degree,
+    sublabel: e.institution,
+    startIdx,
+    endIdx,
+    ongoing: false,
+    // `expected: true` is a real flag in the data — surface it rather than
+    // presenting a projected graduation as a settled fact.
+    rangeText: `${fmtIdx(startIdx)} – ${fmtIdx(endIdx)}${e.expected ? " (expected)" : ""}`,
+  };
+});
+
+// --- role lanes ------------------------------------------------------------
+const roleLanes: Lane[] = experience.map((r) => {
+  const startIdx = parseYm(r.start);
+  const ongoing = r.end === null;
+  const endIdx = ongoing ? nowIdx : parseYm(r.end as string);
+  return {
+    label: r.title,
+    sublabel: r.org,
+    startIdx,
+    endIdx,
+    ongoing,
+    rangeText: `${fmtIdx(startIdx)} – ${ongoing ? "present" : fmtIdx(endIdx)}`,
+    // Guard against placeholder copy ever reaching the page.
+    bullets: r.bullets.filter((b) => !b.includes("TODO(")),
+  };
+});
+
+// --- project lanes ---------------------------------------------------------
+const work = await getCollection("work");
+const projectLanes: Lane[] = work
+  .map((entry) => {
+    const d = entry.data;
+    const startIdx = toIdx(d.period.start.getUTCFullYear(), d.period.start.getUTCMonth() + 1);
+    const ongoing = !d.period.end;
+    const endIdx = ongoing
+      ? nowIdx
+      : toIdx(d.period.end!.getUTCFullYear(), d.period.end!.getUTCMonth() + 1);
+    return {
+      label: d.title,
+      sublabel: d.kind,
+      startIdx,
+      endIdx,
+      ongoing,
+      rangeText: `${fmtIdx(startIdx)} – ${ongoing ? "present" : fmtIdx(endIdx)}`,
+      href: `/work/${entry.id}/`,
+    };
+  })
+  .sort((a, b) => a.startIdx - b.startIdx);
+
+const groups = [
+  { key: "education", title: "Education", lanes: eduLanes },
+  { key: "roles", title: "Roles", lanes: roleLanes },
+  { key: "projects", title: "Projects", lanes: projectLanes },
+].filter((g) => g.lanes.length > 0);
+
+// --- shared axis -----------------------------------------------------------
+const allLanes = groups.flatMap((g) => g.lanes);
+const axisStart = Math.min(...allLanes.map((l) => l.startIdx)) - 2;
+const axisEnd = Math.max(nowIdx, ...allLanes.map((l) => l.endIdx)) + 2;
+const span = Math.max(1, axisEnd - axisStart);
+
+const pct = (idx: number) => ((idx - axisStart) / span) * 100;
+const leftPct = (l: Lane) => pct(l.startIdx);
+// Floor the width so a one-month run can never render as an invisible sliver.
+const widthPct = (l: Lane) => Math.max(1.2, pct(l.endIdx) - pct(l.startIdx));
+
+const firstYear = Math.ceil(axisStart / 12);
+const lastYear = Math.floor(axisEnd / 12);
+const yearTicks = Array.from({ length: lastYear - firstYear + 1 }, (_, i) => firstYear + i).map(
+  (y) => ({ year: y, left: pct(toIdx(y, 1)) }),
+);
+
+const nowLeft = pct(nowIdx);
+---
+
+<section aria-labelledby="trajectory-heading" data-reveal>
+  <header class="mb-10 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-rule pb-4">
+    <h2 id="trajectory-heading" class="font-mono text-micro uppercase tracking-[0.2em] text-faint">
+      Trajectory
+    </h2>
+    <p class="font-mono text-micro uppercase tracking-[0.2em] text-faint">
+      {fmtIdx(axisStart + 2)} — now
+    </p>
+  </header>
+
+  <p class="mb-10 max-w-[46rem] text-small text-muted">
+    Degree, roles, and projects on one axis rather than three lists. The overlap
+    is the point: the coursework, the paid work, and the building all happen at
+    the same time.
+  </p>
+
+  {/* ---------- wide viewports: the actual chart ---------- */}
+  <div class="hidden md:block">
+    {/* year axis */}
+    <div class="relative mb-3 h-5" aria-hidden="true">
+      {yearTicks.map((t) => (
+        <span
+          class="absolute top-0 -translate-x-1/2 font-mono text-micro text-faint"
+          style={`left:${t.left}%`}
+        >
+          {t.year}
+        </span>
+      ))}
+    </div>
+
+    <div class="relative">
+      {/* year gridlines + the NOW marker, behind the bars */}
+      <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+        {yearTicks.map((t) => (
+          <span class="absolute top-0 bottom-0 w-px bg-rule/50" style={`left:${t.left}%`}></span>
+        ))}
+        <span
+          class="absolute top-0 bottom-0 w-px bg-accent/40"
+          style={`left:${nowLeft}%`}
+        ></span>
+        <span
+          class="absolute -top-1 -translate-x-1/2 font-mono text-micro uppercase tracking-wider text-accent"
+          style={`left:${nowLeft}%`}
+        >
+          now
+        </span>
+      </div>
+
+      {groups.map((group) => (
+        <div class="relative border-t border-rule/60 pt-5 pb-6 first:border-t-0">
+          <p class="mb-3 font-mono text-micro uppercase tracking-[0.2em] text-faint">
+            {group.title}
+          </p>
+
+          <div class="flex flex-col gap-3" data-reveal-group>
+            {group.lanes.map((lane) => (
+              <div class="group/lane relative" data-reveal>
+                {/* label row — always text, never colour-only */}
+                <div class="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono text-small">
+                  {lane.href ? (
+                    <a
+                      href={lane.href}
+                      class="text-bright underline decoration-faint underline-offset-4 transition-colors hover:decoration-accent"
+                    >
+                      {lane.label}
+                    </a>
+                  ) : (
+                    <span class="text-bright">{lane.label}</span>
+                  )}
+                  <span class="text-muted">{lane.sublabel}</span>
+                  <span class="text-micro text-faint">{lane.rangeText}</span>
+                </div>
+
+                {/* the run */}
+                <div class="relative h-2" aria-hidden="true">
+                  <span
+                    class:list={[
+                      "absolute top-0 block h-2",
+                      lane.ongoing ? "bg-accent-dim" : "bg-rule",
+                      "transition-[filter] duration-200 group-hover/lane:brightness-150",
+                    ]}
+                    style={`left:${leftPct(lane)}%; width:${widthPct(lane)}%; ${
+                      lane.ongoing
+                        ? "-webkit-mask-image:linear-gradient(90deg,#000 60%,transparent 100%);mask-image:linear-gradient(90deg,#000 60%,transparent 100%);"
+                        : ""
+                    }`}
+                  ></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* ---------- narrow viewports: a horizontal chart is the failure case,
+       so drop it entirely and keep the same information as text ---------- */}
+  <div class="md:hidden">
+    {groups.map((group) => (
+      <div class="border-t border-rule/60 py-5 first:border-t-0">
+        <p class="mb-3 font-mono text-micro uppercase tracking-[0.2em] text-faint">{group.title}</p>
+        <ul class="flex flex-col gap-4" data-reveal-group>
+          {group.lanes.map((lane) => (
+            <li data-reveal>
+              <p class="font-mono text-small text-bright">
+                {lane.href ? (
+                  <a href={lane.href} class="underline decoration-faint underline-offset-4">
+                    {lane.label}
+                  </a>
+                ) : (
+                  lane.label
+                )}
+              </p>
+              <p class="font-mono text-micro text-muted">{lane.sublabel}</p>
+              <p class="font-mono text-micro text-faint">
+                {lane.rangeText}
+                {lane.ongoing && <span class="text-accent"> · ongoing</span>}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+
+  {/* Role detail lives below the chart so the chart stays scannable. Roles
+      with no bullets (nothing supplied yet) render heading-only rather than
+      with invented filler. */}
+  <div class="mt-10 grid gap-x-10 gap-y-6 border-t border-rule pt-8 sm:grid-cols-2" data-reveal-group>
+    {roleLanes
+      .filter((r) => (r.bullets?.length ?? 0) > 0)
+      .map((r) => (
+        <div data-reveal>
+          <p class="font-mono text-small text-bright">{r.label}</p>
+          <p class="mb-2 font-mono text-micro uppercase tracking-wide text-faint">
+            {r.sublabel} · {r.rangeText}
+          </p>
+          <ul class="flex flex-col gap-1.5 text-small text-muted">
+            {r.bullets!.map((b) => (
+              <li class="border-l border-rule pl-3">{b}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+  </div>
+</section>

@@ -10,7 +10,7 @@
 import Base from "../layouts/Base.astro";
 import Hero from "../components/Hero.astro";
 import ProjectCard from "../components/ProjectCard.astro";
-import ExperienceRuns from "../components/ExperienceRuns.astro";
+import Trajectory from "../components/Trajectory.astro";
 import SkillMatrix from "../components/SkillMatrix.astro";
 import EducationPanel from "../components/EducationPanel.astro";
 import { getCollection } from "astro:content";
@@ -49,10 +49,10 @@ const featured = (await getCollection("work"))
     )
   }
 
-  {/* Roles on one shared time axis — the overlap is the point, and a
-      bulleted list hides it. */}
+  {/* Degree, roles and projects on ONE axis — PLAN.md §2's "container made
+      visible", applied to the whole record rather than just the projects. */}
   <section class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
-    <ExperienceRuns />
+    <Trajectory />
   </section>
 
   {/* Skills cross-referenced against the projects that actually evidence
