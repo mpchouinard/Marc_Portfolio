@@ -197,6 +197,14 @@ const nowLeft = pct(nowIdx);
                   <span class="text-micro text-faint">{lane.rangeText}</span>
                 </div>
 
+                {lane.bullets && lane.bullets.length > 0 && (
+                  <ul class="mb-2 flex flex-col gap-1 text-small text-muted">
+                    {lane.bullets.map((b) => (
+                      <li class="border-l border-rule pl-3">{b}</li>
+                    ))}
+                  </ul>
+                )}
+
                 {/* the run */}
                 <div class="relative h-2" aria-hidden="true">
                   <span
@@ -243,6 +251,13 @@ const nowLeft = pct(nowIdx);
                 {lane.rangeText}
                 {lane.ongoing && <span class="text-accent"> · ongoing</span>}
               </p>
+              {lane.bullets && lane.bullets.length > 0 && (
+                <ul class="mt-2 flex flex-col gap-1 text-small text-muted">
+                  {lane.bullets.map((b) => (
+                    <li class="border-l border-rule pl-3">{b}</li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>
@@ -250,24 +265,4 @@ const nowLeft = pct(nowIdx);
     ))}
   </div>
 
-  {/* Role detail lives below the chart so the chart stays scannable. Roles
-      with no bullets (nothing supplied yet) render heading-only rather than
-      with invented filler. */}
-  <div class="mt-10 grid gap-x-10 gap-y-6 border-t border-rule pt-8 sm:grid-cols-2" data-reveal-group>
-    {roleLanes
-      .filter((r) => (r.bullets?.length ?? 0) > 0)
-      .map((r) => (
-        <div data-reveal>
-          <p class="font-mono text-small text-bright">{r.label}</p>
-          <p class="mb-2 font-mono text-micro uppercase tracking-wide text-faint">
-            {r.sublabel} · {r.rangeText}
-          </p>
-          <ul class="flex flex-col gap-1.5 text-small text-muted">
-            {r.bullets!.map((b) => (
-              <li class="border-l border-rule pl-3">{b}</li>
-            ))}
-          </ul>
-        </div>
-      ))}
-  </div>
 </section>

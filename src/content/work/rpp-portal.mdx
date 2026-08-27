@@ -1,0 +1,90 @@
+---
+title: "Research Position Portal"
+kind: coursework
+period:
+  start: 2025-11-02
+  end: 2025-12-13
+status: complete
+role: "team of 4 — team liaison, top contributor"
+affiliation: "WPI CS3733 Software Engineering"
+collaborators: ["Joe DiPietro", "Tristan Moda", "David Zhang"]
+domains: ["web-systems", "databases"]
+methods: ["oauth", "relational-modeling", "agile", "containerization"]
+stack: ["python", "flask", "sqlalchemy", "postgresql", "docker", "aws", "auth0", "bootstrap", "pytest"]
+results: []
+artifacts:
+  - type: repo
+    url: "https://github.com/WPI-CS3733-2025B/team-commitcrew"
+    label: "Source on GitHub"
+featured: false
+summary: "Flask portal where faculty post research positions and students apply, with Auth0 login and a Dockerised AWS deployment."
+---
+
+import ResultsTable from "../../components/ResultsTable.astro";
+import ArtifactList from "../../components/ArtifactList.astro";
+
+## Problem
+
+Undergraduate research positions at a university are matched almost entirely
+through informal channels — a professor mentions an opening in a lecture, or a
+student emails around hoping to catch one. Faculty have no clean way to advertise
+what they need, and students have no way to see what exists or to present the
+coursework that would qualify them.
+
+The portal gives both sides a structured surface: faculty post positions with
+concrete requirements, students maintain a profile of majors, courses taken,
+programming languages, and interests, and applications carry references.
+
+## Data
+
+The interesting part is the relational model, because the matching problem is
+really a modelling problem. Users are polymorphic — `Student` and `Faculty` both
+inherit a shared `User` — and the qualification surface is normalised across
+`Major`, `Course`, `TakenCourse`, `ProgrammingLang`, and `TopicOfInterest`.
+`Position`, `Application`, and `Reference` carry the workflow itself.
+
+- **Store:** SQLAlchemy models, Flask-Migrate migrations, SQLite locally and PostgreSQL on AWS RDS in production
+- **Scale:** a course project, so the data is seeded rather than organic — no real user volume behind it
+
+## Approach
+
+Flask with blueprint separation — `auth`, `student`, `faculty`, `main`, `errors` —
+so the two user roles stay isolated rather than tangled behind conditionals.
+
+Authentication goes through **Auth0 via OAuth**: the app redirects to Auth0,
+exchanges the token, and keys the local user record on the returned `auth0_sub`
+rather than storing passwords at all. `itsdangerous` handles signed tokens and
+Flask-Mail covers verification flows. Sessions ride on Flask-Login.
+
+Deployment is containerised with Docker and runs on AWS EC2 backed by RDS
+PostgreSQL, with HTTPS terminated at the instance and environment-based config
+separating local from production.
+
+Process was Agile across four people over six weeks, with the team liaison role
+carrying communication with the course staff. 174 commits, of which I authored
+60 — the largest share on the team.
+
+## Experiments
+
+<ResultsTable results={frontmatter.results} />
+
+{/* TODO(marc): this is a build, not a study, so `results` may legitimately stay
+    empty. If the course required load testing or a usability round, those
+    numbers would belong here. Don't invent any. */}
+
+## What didn't work
+
+{/* TODO(marc): real candidates from the repo — the test suite is 3 tests in
+    tests/test_routes.py written near the end (commits "began writing tests" and
+    "added two tests" are the last two on the branch), which is worth being
+    honest about; and the AWS deployment has since gone down. What bit you
+    during the Auth0 integration or the EC2/RDS setup? */}
+
+## Artifacts
+
+<ArtifactList artifacts={frontmatter.artifacts} />
+
+{/* NOTE: the graded deployment at ec2-3-16-148-127.us-east-2.compute.amazonaws.com
+    is no longer reachable (connection times out), so it is deliberately NOT
+    listed as an artifact — a dead link on a portfolio is worse than no link.
+    If you redeploy it, add it back as type: demo. */}
