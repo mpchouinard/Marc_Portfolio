@@ -90,7 +90,12 @@ html {
 }
 
 body {
-  background-color: var(--color-ground);
+  /* Deliberately TRANSPARENT — the ground colour lives on <html> above.
+     The glyph-field canvas is a negative-z-index child of <body>, and CSS
+     paints such children BELOW the backgrounds of in-flow block elements.
+     Giving <body> an opaque background therefore buries the field entirely.
+     Do not "restore" a background here; change <html> instead. */
+  background-color: transparent;
   color: var(--color-text);
   font-family: var(--font-body);
   font-size: var(--text-body);
