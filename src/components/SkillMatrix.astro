@@ -1,21 +1,21 @@
 ---
 /**
- * SkillMatrix — the skills section, made evidential rather than a plain list.
+ * SkillMatrix — a real adjacency matrix, not a list of rows with chips beside
+ * them. Rows are skills, columns are projects. A filled cell means that
+ * project's `stack`, `methods`, or `domains` genuinely include that skill.
  *
- * profile.skills (display case: "Hugging Face", "AWS (EC2, RDS)") is
- * cross-referenced against the real `stack` field of every `work` collection
- * entry (lowercase-hyphenated tokens: "huggingface", "pytorch"). A skill that
- * matches links straight to the project(s) that evidence it — a real href,
- * computed from real data. Nothing else changes what's shown: no rating, no
- * percentage, no invented years-of-experience. A skill with no matching
- * project is shown just as plainly, in a lower-contrast tier captioned
- * "coursework / no public project" rather than hidden, ranked, or faked.
+ * Reading direction is the point: across a row shows where a skill is
+ * evidenced; down a column shows a project's real stack; the density of the
+ * grid as a whole is an honest signal of how much of the toolkit has public
+ * work behind it. No rating, no percentage, no invented years-of-experience,
+ * no claim about how an unevidenced skill was acquired — the empty cells
+ * simply stay empty.
  *
  * Fully server-rendered: complete and readable with JS disabled. The only
- * "interactivity" is a CSS-only group-hover/focus-within treatment — hovering
- * or tabbing into a skill row brightens its own evidence links. No JS, no
- * React island: the evidence links are already visible, so a script would
- * only be replacing a hover style JS doesn't need to own.
+ * "interactivity" is CSS-only: `group`/`group-hover` traces a row on hover or
+ * keyboard focus, and a `:has()` rule traces the matching column. Both are a
+ * pure enhancement layered on markup that already reads correctly without
+ * them — no JS, no React island.
  */
 import { skills } from "../data/profile";
 import { getCollection } from "astro:content";
@@ -58,10 +58,13 @@ interface ProjectRef {
   title: string;
 }
 
-// normalized stack token -> every project whose `stack` array carries it.
+// normalized token (from stack, methods, OR domains) -> every project whose
+// data carries it. Widened beyond `stack` alone so a skill can also surface
+// evidence through a project's methods/domains fields, per spec.
 const stackIndex = new Map<string, ProjectRef[]>();
 for (const entry of work) {
-  for (const raw of entry.data.stack) {
+  const tokens = [...entry.data.stack, ...entry.data.methods, ...entry.data.domains];
+  for (const raw of tokens) {
     const key = normalizeToken(raw);
     const bucket = stackIndex.get(key) ?? [];
     if (!bucket.some((p) => p.id === entry.id)) {
@@ -71,9 +74,12 @@ for (const entry of work) {
   }
 }
 
+// The matrix's column order — every project on the site, once.
+const projects: ProjectRef[] = work.map((entry) => ({ id: entry.id, title: entry.data.title }));
+
 interface SkillEvidence {
   name: string;
-  projects: ProjectRef[];
+  projectIds: Set<string>;
 }
 
 const categories: { key: keyof typeof skills; label: string }[] = [
@@ -84,34 +90,32 @@ const categories: { key: keyof typeof skills; label: string }[] = [
 
 const groups = categories.map(({ key, label }) => ({
   label,
-  skills: skills[key].map(
-    (name): SkillEvidence => ({
-      name,
-      projects: stackIndex.get(normalizeToken(name)) ?? [],
-    }),
-  ),
+  skills: skills[key].map((name): SkillEvidence => {
+    const matches = stackIndex.get(normalizeToken(name)) ?? [];
+    return { name, projectIds: new Set(matches.map((p) => p.id)) };
+  }),
 }));
 
-// A real, computed count — not a percentage, not a rating. Reported plainly
-// so the reader can see how the tiers below break down before reading them.
+// A real, computed count — not a percentage, not a rating.
 const allSkills = groups.flatMap((g) => g.skills);
-const evidencedCount = allSkills.filter((s) => s.projects.length > 0).length;
+const evidencedCount = allSkills.filter((s) => s.projectIds.size > 0).length;
 const totalCount = allSkills.length;
 ---
 
-<section id="skills" class="mx-auto w-full max-w-[72rem] px-6 py-24 md:px-10 md:py-32">
-  <header class="mb-4 border-b border-rule pb-4" data-reveal>
+<section id="skills" class="mx-auto w-full max-w-[72rem] px-6 py-24 md:px-10 md:py-32" data-reveal>
+  <header class="mb-4 border-b border-rule pb-4">
     <h2 class="font-mono text-micro uppercase tracking-[0.2em] text-faint">Skills</h2>
     <p class="mt-3 max-w-[46rem] text-small text-muted">
-      Cross-referenced against the stack fields of the projects on this
-      site, not self-rated. A linked skill has a public artifact behind it.
-      An unlinked one just means nothing here demonstrates it yet — no
-      score, no ranking, no claim either way.
+      Rows are skills, columns are the projects on this site. A filled cell
+      means that project's stack, methods, or domains genuinely include that
+      skill — cross-referenced from the same frontmatter that drives the case
+      studies, not self-rated. An empty row isn't a claim about how a skill
+      was learned; it just means nothing here demonstrates it yet.
     </p>
   </header>
 
-  <p class="mb-8 font-mono text-micro uppercase tracking-wide text-faint" data-reveal>
-    {evidencedCount} of {totalCount} skills link to a project below
+  <p class="mb-8 font-mono text-micro uppercase tracking-wide text-faint">
+    {evidencedCount} of {totalCount} skills have at least one filled cell below
   </p>
 
   <div class="flex flex-col gap-10" data-reveal-group>
@@ -121,43 +125,128 @@ const totalCount = allSkills.length;
           <h3 class="mb-3 font-mono text-micro uppercase tracking-widest text-muted">
             {group.label}
           </h3>
-          <ul class="flex flex-col divide-y divide-rule/60 border-t border-rule">
-            {group.skills.map((skill) => {
-              const hasEvidence = skill.projects.length > 0;
-              return (
-                <li class="group flex flex-wrap items-center gap-x-4 gap-y-1.5 py-2.5">
-                  <span
-                    class:list={[
-                      "min-w-[10rem] font-mono text-small",
-                      hasEvidence ? "text-text" : "text-faint",
-                    ]}
-                  >
-                    {skill.name}
-                  </span>
-                  {hasEvidence ? (
-                    <ul class="flex flex-wrap gap-1.5">
-                      {skill.projects.map((p) => (
-                        <li>
-                          <a
-                            href={`/work/${p.id}/`}
-                            class="inline-block rounded-sm border border-accent-dim/50 px-2 py-0.5 font-mono text-micro text-accent-dim transition-colors duration-200 ease-out-expo group-hover:border-accent group-hover:text-accent group-focus-within:border-accent group-focus-within:text-accent hover:bg-accent hover:text-ground focus-visible:bg-accent focus-visible:text-ground"
-                          >
-                            {p.title}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span class="font-mono text-micro uppercase tracking-wide text-faint/70">
-                      no linked project
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <div class="skill-matrix-wrap overflow-x-auto">
+            <table class="skill-matrix border-collapse">
+              <caption class="sr-only">
+                {group.label} skills cross-referenced against this site's projects. A
+                filled cell means the project's stack, methods, or domains include that
+                skill; an empty cell means nothing published here demonstrates it yet.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="border border-rule px-3 py-1.5 text-left">
+                    <span class="sr-only">Skill</span>
+                  </th>
+                  {projects.map((p) => (
+                    <th
+                      scope="col"
+                      class="max-w-[9rem] whitespace-normal border border-rule px-3 py-1.5 text-left align-bottom font-mono text-micro font-medium uppercase tracking-wide text-muted"
+                    >
+                      <a
+                        href={`/work/${p.id}/`}
+                        class="transition-colors duration-200 ease-out-expo hover:text-accent focus-visible:text-accent"
+                      >
+                        {p.title}
+                      </a>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {group.skills.map((skill) => {
+                  const hasEvidence = skill.projectIds.size > 0;
+                  return (
+                    <tr class="group">
+                      <th
+                        scope="row"
+                        class:list={[
+                          "whitespace-nowrap border border-rule px-3 py-1.5 text-left font-mono text-small font-normal transition-colors duration-200 ease-out-expo group-hover:bg-accent/10 group-focus-within:bg-accent/10",
+                          hasEvidence ? "text-text" : "text-faint",
+                        ]}
+                      >
+                        {skill.name}
+                      </th>
+                      {projects.map((p) => {
+                        const used = skill.projectIds.has(p.id);
+                        return (
+                          <td class="min-w-[3rem] border border-rule px-3 py-1.5 text-center transition-colors duration-200 ease-out-expo group-hover:bg-accent/10 group-focus-within:bg-accent/10">
+                            {used && (
+                              <>
+                                <span
+                                  aria-hidden="true"
+                                  class="mx-auto block h-1.5 w-1.5 rounded-full bg-accent-dim transition-colors duration-200 ease-out-expo group-hover:bg-accent group-focus-within:bg-accent"
+                                />
+                                <span class="sr-only">used in {p.title}</span>
+                              </>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       ))
     }
   </div>
 </section>
+
+<style>
+  /*
+   * Compact + left-aligned: never let a 3-column matrix stretch to the full
+   * container width (a wide sparse grid reads as broken). Any inherited
+   * `width: 100%` table reset loses to this, since the scoped selector below
+   * is more specific than a bare element selector.
+   */
+  .skill-matrix {
+    width: auto;
+  }
+
+  /*
+   * Row cross-highlight is plain Tailwind (`group` / `group-hover` on the
+   * <tr>, above). Column cross-highlight has no Tailwind primitive — nothing
+   * in CSS otherwise expresses "every cell sharing this cell's column" — so
+   * it's keyed on column position with :has(). Headroom to a 7th column
+   * (6 project columns) for future work entries; the unused rules are
+   * harmless no-ops today with only 3 columns.
+   */
+  .skill-matrix:has(tbody td:nth-child(2):hover) thead th:nth-child(2),
+  .skill-matrix:has(tbody td:nth-child(2):hover) tbody td:nth-child(2),
+  .skill-matrix:has(thead th:nth-child(2) a:focus-visible) thead th:nth-child(2),
+  .skill-matrix:has(thead th:nth-child(2) a:focus-visible) tbody td:nth-child(2) {
+    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  }
+  .skill-matrix:has(tbody td:nth-child(3):hover) thead th:nth-child(3),
+  .skill-matrix:has(tbody td:nth-child(3):hover) tbody td:nth-child(3),
+  .skill-matrix:has(thead th:nth-child(3) a:focus-visible) thead th:nth-child(3),
+  .skill-matrix:has(thead th:nth-child(3) a:focus-visible) tbody td:nth-child(3) {
+    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  }
+  .skill-matrix:has(tbody td:nth-child(4):hover) thead th:nth-child(4),
+  .skill-matrix:has(tbody td:nth-child(4):hover) tbody td:nth-child(4),
+  .skill-matrix:has(thead th:nth-child(4) a:focus-visible) thead th:nth-child(4),
+  .skill-matrix:has(thead th:nth-child(4) a:focus-visible) tbody td:nth-child(4) {
+    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  }
+  .skill-matrix:has(tbody td:nth-child(5):hover) thead th:nth-child(5),
+  .skill-matrix:has(tbody td:nth-child(5):hover) tbody td:nth-child(5),
+  .skill-matrix:has(thead th:nth-child(5) a:focus-visible) thead th:nth-child(5),
+  .skill-matrix:has(thead th:nth-child(5) a:focus-visible) tbody td:nth-child(5) {
+    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  }
+  .skill-matrix:has(tbody td:nth-child(6):hover) thead th:nth-child(6),
+  .skill-matrix:has(tbody td:nth-child(6):hover) tbody td:nth-child(6),
+  .skill-matrix:has(thead th:nth-child(6) a:focus-visible) thead th:nth-child(6),
+  .skill-matrix:has(thead th:nth-child(6) a:focus-visible) tbody td:nth-child(6) {
+    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  }
+  .skill-matrix:has(tbody td:nth-child(7):hover) thead th:nth-child(7),
+  .skill-matrix:has(tbody td:nth-child(7):hover) tbody td:nth-child(7),
+  .skill-matrix:has(thead th:nth-child(7) a:focus-visible) thead th:nth-child(7),
+  .skill-matrix:has(thead th:nth-child(7) a:focus-visible) tbody td:nth-child(7) {
+    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  }
+</style>
