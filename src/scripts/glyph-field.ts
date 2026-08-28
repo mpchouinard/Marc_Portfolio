@@ -124,7 +124,7 @@ function buildPalette(): Palette {
   const stops = new Array<string>(size);
 
   // Vibrancy pass (owner asked for a more vibrant hero, same mechanic).
-  // The ramp is now three segments instead of two, and the accent band
+  // The ramp is now three segments instead of two, with the accent band
   // starts much earlier, so a far larger share of the field carries colour
   // rather than sitting in the grey-green floor.
   const mutedAt = 0.42; // was 0.62, accent now begins far sooner

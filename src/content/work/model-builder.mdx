@@ -28,11 +28,11 @@ Plenty of engineers can write code and stand up infrastructure but stall on the
 ML-specific judgment: how to frame the problem, which methodology suits the data,
 what "good" even looks like for this target. Existing AutoML tools mostly assume
 that framing is already done. You arrive knowing the task type and the target
-column, and the tool searches hyperparameters from there.
+column. The tool searches hyperparameters from there.
 
-Model Builder targets the step before that. You upload a CSV, describe the goal in
-plain language, and the system does the triage a senior ML engineer would do:
-interpret the problem, pick an approach, and explain why.
+Model Builder targets the step before that. You upload a CSV and describe the goal in
+plain language. The system does the triage a senior ML engineer would do:
+interpret the problem, pick an approach and explain why.
 
 ## Data
 
@@ -57,23 +57,23 @@ are declared as YAML specs, twelve of them at the time of writing:
 - **Ensembles:** blending, stacking
 
 Everything downstream is hand-written scikit-learn/LightGBM. The payoff is that
-behaviour stays predictable, debuggable, and explainable. An LLM that emits
+behaviour stays predictable, debuggable and explainable. An LLM that emits
 training code is very hard to trust; an LLM that picks a known-good recipe and
 justifies the choice is much easier to audit.
 
 The backend is FastAPI with SSE streaming so reasoning arrives incrementally
 rather than as a wall of text after a delay. The frontend is a Next.js chat UI
-that renders structured cards for the data profile, the proposed plan, and the
+that renders structured cards for the data profile, the proposed plan and the
 results, instead of a bare chat transcript.
 
 Every completed run emits a bundle: the fitted model, a standalone `train.py`
-that reproduces the training end to end, and a FastAPI inference stub. The
+that reproduces the training end to end and a FastAPI inference stub. The
 `train.py` is the "glass box" commitment made concrete: the output is inspectable
 code you own, not an opaque endpoint.
 
 Later work in the repo adds a trust layer that evaluates results with more
 scrutiny before recommending them, tournaments that pit methodologies against
-each other to build ensembles, and in-app deployment behind an API.
+each other to build ensembles and in-app deployment behind an API.
 
 ## Experiments
 
@@ -88,7 +88,7 @@ each other to build ensembles, and in-app deployment behind an API.
 
 {/* TODO(marc): the repo's own history hints at real tension worth writing up:
     a "trust layer" was added specifically because training results needed more
-    scrutiny before being recommended, and PRODUCT.md notes the UI was drifting
+    scrutiny before being recommended. PRODUCT.md notes the UI was drifting
     toward an "overloaded enterprise admin surface" as features accreted. Both
     are genuine, interesting failures. Write them in your own words, since you
     were there for the decisions and I was not. */}

@@ -14,7 +14,7 @@ artifacts:
   - type: repo
     url: "https://github.com/mpchouinard/HouseHub"
     label: "Source on GitHub"
-summary: "Hi-fi Flask prototype for an HCI course: one shared dashboard where roommates track chores, supplies, and maintenance issues."
+summary: "Hi-fi Flask prototype for an HCI course: one shared dashboard where roommates track chores, supplies and maintenance issues."
 featured: false
 cover: "./covers/househub.png"
 ---
@@ -25,7 +25,7 @@ import ArtifactList from "../../components/ArtifactList.astro";
 ## Problem
 
 Shared apartments run on memory and nagging. Chores get done twice or not at
-all, nobody notices the toilet paper is gone until it matters, and the leak
+all, nobody notices the toilet paper is gone until it matters. The leak
 under the sink is everyone's problem and therefore no one's.
 
 This was built as a **hi-fi prototype for an HCI course**. The goal was a
@@ -54,12 +54,12 @@ seed data is fictional.
 ## Approach
 
 A single Flask blueprint, server-rendered Jinja templates, SQLite through
-SQLAlchemy's typed `Mapped[]` API, and Bootstrap 5 over a small amount of
+SQLAlchemy's typed `Mapped[]` API and Bootstrap 5 over a small amount of
 hand-written CSS.
 
 The interface is deliberately **one page**. `/house/<code>` renders roommates,
-every chore, supplies, and issues together, because the research question was
-whether a household would keep a shared board current, and a board that hides
+every chore, supplies and issues together, because the research question was
+whether a household would keep a shared board current. A board that hides
 half its state behind navigation cannot answer that.
 
 Mutations are small, single-purpose POST routes rather than one form: update a
@@ -78,7 +78,7 @@ notices, reports.
 <ResultsTable results={frontmatter.results} />
 
 No quantitative evaluation was run. This was a prototype built to be used and
-observed, and inventing numbers for it would be worse than having none.
+observed. Inventing numbers for it would be worse than having none.
 
 {/* TODO(marc): if the HCI course ran usability sessions, task-completion or
     SUS numbers would go here (real values only). */}
@@ -87,7 +87,7 @@ observed, and inventing numbers for it would be worse than having none.
 
 **Password hashing that nothing calls.** `Roomie` has `set_password` and
 `check_password` built on Werkzeug's `generate_password_hash`. The login route
-uses neither: it compares `user.password` as plaintext, and an unrecognised
+uses neither: it compares `user.password` as plaintext. An unrecognised
 name silently creates an account. That was the right call for a usability
 study, where a login wall means you learn nothing about the actual task, and
 it is the first thing that would have to go before this touched a real
@@ -95,16 +95,16 @@ household. Both paths still exist in the code, which is honestly just
 confusing to read.
 
 **A dead `forms.py`.** The file imports `Course`, `Instructor`, `Student`,
-`Major`, and `Faculty` from `app.main.models`, none of which exist here; the
+`Major` and `Faculty` from `app.main.models`, none of which exist here; the
 models are `House`, `Roomie`, `Chore`, `Supply`, `Issue`. It is a leftover
 scaffold from a different Flask app, it depends on `Flask-WTF` and
-`WTForms-SQLAlchemy` which are not even in `requirements.txt`, and it would
+`WTForms-SQLAlchemy` which are not even in `requirements.txt`. It would
 raise on import. Nothing imports it, so the app runs fine, which is exactly
 why it survived. Every form in the app is hand-written HTML posting to a
 route.
 
 **Multi-household exists in the schema and nowhere else.** `House` has a
-unique join `code`, and every route is parameterised by it, but `/` hard-codes
+unique join `code`. Every route is parameterised by it, but `/` hard-codes
 a redirect to `apt101` and no UI ever creates or joins a second house. The
 data model can do it; the prototype never earned it.
 

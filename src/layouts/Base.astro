@@ -80,7 +80,7 @@ const jsonLd = {
     <slot name="head" />
 
     {/*
-      REVEAL GUARD: must run BEFORE first paint, and must be inline/blocking.
+      REVEAL GUARD: must run BEFORE first paint and must be inline/blocking.
       If the `js-reveal` class is added later (from a module script), the
       browser has already painted the elements visible and then *transitions*
       them to the hidden state: content visibly fades OUT before fading back
@@ -107,7 +107,7 @@ const jsonLd = {
         content. The hero drives it to full intensity; below the hero it
         thins out but never stops, so the field follows the reader down the
         page. Decorative only: aria-hidden, not focusable, pointer-events
-        none, and pinned behind every section via z-index. */}
+        none, pinned behind every section via z-index. */}
     <div class="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
       <GlyphField />
     </div>
@@ -159,7 +159,7 @@ const jsonLd = {
       document.addEventListener("astro:page-load", initReveal);
 
       // Smooth scroll is initialised here (not only in the hero) so every
-      // page gets it, and so the glyph field receives velocity site-wide.
+      // page gets it, so the glyph field receives velocity site-wide.
       if (!prefersReducedMotion()) {
         initSmoothScroll();
 

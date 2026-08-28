@@ -2,7 +2,7 @@
 /**
  * Timeline: every `work` entry on one chronological spine, kinds
  * interleaved. This is "the container made visible": research, coursework,
- * personal, and industry work share one line rather than sitting in three
+ * personal and industry work share one line rather than sitting in three
  * disconnected lists.
  *
  * Kinds are told apart by weight / case / border treatment only: the
@@ -28,7 +28,7 @@ function formatMonthYear(date: Date) {
 
 type Kind = CollectionEntry<"work">["data"]["kind"];
 
-// Four kinds, one accent color: differentiated by weight, case, and border
+// Four kinds, one accent color: differentiated by weight, case and border
 // treatment rather than by inventing new hues.
 const KIND_META: Record<Kind, { label: string; class: string }> = {
   research: { label: "Research", class: "font-bold uppercase tracking-widest" },

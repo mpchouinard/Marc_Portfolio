@@ -7,6 +7,7 @@
    third-party origin. Matters for the Lighthouse target. */
 @import "@fontsource-variable/jetbrains-mono";
 @import "@fontsource-variable/inter";
+@import "@fontsource-variable/space-grotesk";
 
 /* ===========================================================================
    DESIGN TOKENS, LOCKED 2026-08-26. Direction: "Terminal".
@@ -35,23 +36,45 @@
   /* --- bloom: what the glyph field resolves into as you scroll -----------
      Phosphor family only. Deliberately NO blue/violet: the whole scroll
      transition stays in one hue family so it can never clash with the
-     accent, and reads as the terminal's own glow blooming. */
+     accent, reading as the terminal's own glow blooming. */
   --color-aurora-1: #08140E;   /* near-black green */
   --color-aurora-2: #0E3320;   /* deep forest */
   --color-aurora-3: #14532D;   /* moss, the bloom core */
   --color-bloom-hot: #86EFAC;  /* light phosphor, for crests and bloom highlights */
 
   /* --- type ------------------------------------------------------------- */
-  /* Mono carries the identity: display, nav, labels, metrics, code.
+  /* Mono still carries the identity: nav, labels, metrics, code, and every
+     structural element on the site.
      Inter is used ONLY for long-form case-study prose: mono at paragraph
-     length is genuinely hard to read, and these pages are meant to be read.
-     To go fully mono, point --font-body at the mono stack. */
-  --font-display: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+     length is genuinely hard to read. These pages are meant to be read.
+     To go fully mono, point --font-body at the mono stack.
+
+     --font-display is Space Grotesk and is deliberately scoped to exactly one
+     element: the owner's name in the hero (Hero.astro). Owner decision on
+     2026-08-28, overriding the original mono-display token. Two reasons.
+     First, JetBrains Mono is fixed-width at 0.6em per glyph, so a 22-character
+     name needs 13.2em and cannot fit one line at any size with presence.
+     Space Grotesk is proportional and roughly 15% narrower here, which buys
+     back the line. Second, it reads as technical rather than retro-terminal,
+     so the identity survives the swap. Do not widen its use: the moment a
+     second element takes it, the mono-forward direction starts to erode. */
+  --font-display: "Space Grotesk Variable", "JetBrains Mono Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono:    "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --font-body:    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* --- type scale (explicit weights) ------------------------------------ */
-  --text-hero:     clamp(2.75rem, 11vw, 9rem);
+  /* The hero name is set on ONE line at every viewport width (Hero.astro adds
+     white-space: nowrap). A plain vw value cannot guarantee that: it either
+     overflows narrow screens or wastes width on wide ones. So the size is
+     derived from the space actually available instead.
+
+     100vw minus 3rem is the viewport less Hero's px-6 gutters. Dividing by
+     --hero-em-width, the measured width of the name in em at this typeface,
+     yields the largest size that still fits, capped at 9rem so it stops
+     growing on very wide displays. Remeasure --hero-em-width if the name or
+     --font-display ever changes. */
+  --hero-em-width: 11.75;
+  --text-hero:     min(9rem, calc((100vw - 3rem) / var(--hero-em-width)));
   --text-display:  clamp(2rem, 5.5vw, 3.5rem);
   --text-title:    clamp(1.5rem, 3vw, 2rem);
   --text-lede:     clamp(1.0625rem, 1.6vw, 1.25rem);
@@ -91,7 +114,7 @@ html {
 
 body {
   /* Deliberately TRANSPARENT: the ground colour lives on <html> above.
-     The glyph-field canvas is a negative-z-index child of <body>, and CSS
+     The glyph-field canvas is a negative-z-index child of <body>. CSS
      paints such children BELOW the backgrounds of in-flow block elements.
      Giving <body> an opaque background therefore buries the field entirely.
      Do not "restore" a background here; change <html> instead. */
@@ -118,6 +141,22 @@ h1, h2, h3 {
   letter-spacing: -0.02em;
   line-height: 1.1;
   text-wrap: balance;
+}
+
+/* The hero name is the single exception to the mono rule above.
+   It is declared here rather than as a utility class on the element because
+   the `h1 { font-family: var(--font-mono) }` rule above is UNLAYERED, and
+   unlayered CSS beats anything Tailwind emits into @layer utilities. A
+   `font-display` class on the element silently loses; this does not.
+   `text-wrap: nowrap` is needed to override the `balance` set above: together
+   with the width-derived --text-hero, it keeps the name on exactly one line
+   at every viewport size. */
+#hero h1 {
+  font-family: var(--font-display);
+  font-variant-ligatures: normal;
+  letter-spacing: -0.03em;
+  text-wrap: nowrap;
+  white-space: nowrap;
 }
 
 a {

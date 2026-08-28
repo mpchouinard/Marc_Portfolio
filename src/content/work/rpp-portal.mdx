@@ -28,20 +28,20 @@ import ArtifactList from "../../components/ArtifactList.astro";
 Undergraduate research positions at a university are matched almost entirely
 through informal channels. A professor mentions an opening in a lecture, or a
 student emails around hoping to catch one. Faculty have no clean way to advertise
-what they need, and students have no way to see what exists or to present the
+what they need. Students have no way to see what exists or to present the
 coursework that would qualify them.
 
 The portal gives both sides a structured surface: faculty post positions with
 concrete requirements, students maintain a profile of majors, courses taken,
-programming languages, and interests, and applications carry references.
+programming languages and interests. Applications carry references.
 
 ## Data
 
 The interesting part is the relational model, because the matching problem is
 really a modelling problem. Users are polymorphic: `Student` and `Faculty` both
-inherit a shared `User`, and the qualification surface is normalised across
-`Major`, `Course`, `TakenCourse`, `ProgrammingLang`, and `TopicOfInterest`.
-`Position`, `Application`, and `Reference` carry the workflow itself.
+inherit a shared `User`. The qualification surface is normalised across
+`Major`, `Course`, `TakenCourse`, `ProgrammingLang` and `TopicOfInterest`.
+`Position`, `Application` and `Reference` carry the workflow itself.
 
 - **Store:** SQLAlchemy models over SQLite, with Flask-Migrate handling schema migrations
 - **Scale:** a course project, so the data is seeded rather than organic, with no real user volume behind it
@@ -51,7 +51,7 @@ inherit a shared `User`, and the qualification surface is normalised across
 Flask with blueprint separation (`auth`, `student`, `faculty`, `main`, `errors`)
 keeps the two user roles isolated rather than tangled behind conditionals.
 
-Authentication is session-based: Flask-Login holds the session, and passwords
+Authentication is session-based: Flask-Login holds the session. Passwords
 are hashed with Werkzeug's `generate_password_hash` rather than stored. Faculty
 accounts additionally require email confirmation before they can post: a
 signed, expiring token generated with `itsdangerous` and delivered by
@@ -67,7 +67,7 @@ pinned dependencies ship no PostgreSQL driver. The container as built runs on
 SQLite.
 
 Process was Agile across four people over six weeks, with the team liaison role
-carrying communication with the course staff, and the largest share of the
+carrying communication with the course staff and the largest share of the
 implementation on the merged branch.
 
 ## Experiments
@@ -84,13 +84,13 @@ implementation on the merged branch.
 `pytest==8.4.2` and there is a `tests/` package, but it contains nothing except
 an empty `__init__.py`: no tests at all. On a six-week course
 project with a fixed demo date, testing was the thing that kept losing to
-features, and the dependency was added in anticipation of a suite that never
+features. The dependency was added in anticipation of a suite that never
 got written. Naming it here is more useful than quietly leaving the dependency
 to imply coverage that does not exist.
 
 **Auth0 was specified and never built.** The requirements document offers SSO
 through Auth0 as an alternative to email-and-password login. No Auth0 SDK, no
-OAuth flow, and no token handling ever landed. What shipped is the Flask-Login
+OAuth flow and no token handling ever landed. What shipped is the Flask-Login
 and Werkzeug path described above. The spec was written optimistically at the
 start of the term and never revised once the scope became clear.
 

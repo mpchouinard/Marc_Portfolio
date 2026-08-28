@@ -15,7 +15,7 @@ artifacts:
     url: "https://github.com/Mordecai-Yiadom/MordBot"
     label: "Source on GitHub"
 featured: false
-summary: "Discord voice assistant that segments speech with VAD, transcribes it with a streaming Nemotron ASR model, and answers out loud, entirely on local inference."
+summary: "Discord voice assistant that segments speech with VAD, transcribes it with a streaming Nemotron ASR model and answers out loud, entirely on local inference."
 ---
 
 import ResultsTable from "../../components/ResultsTable.astro";
@@ -29,7 +29,7 @@ in a voice call. If six people are in a call and someone wants a song changed,
 the interaction should be saying so out loud, not alt-tabbing to type
 `/skip`.
 
-The goal was a bot that sits in the call, listens, and answers in the same
+The goal was a bot that sits in the call, listens and answers in the same
 channel it was asked in. A three-person project, built with Mordecai Yiadom
 and Joe DiPietro.
 
@@ -74,7 +74,7 @@ have to be arbitrated rather than both handed to the client.
 
 Music playback is `yt-dlp` into FFmpeg, per guild.
 
-My work was on the agent side: the tool surface the model calls into, and the
+My work was on the agent side: the tool surface the model calls into and the
 conversational layer that decides how it responds.
 
 ## Experiments
@@ -91,7 +91,7 @@ describe NVIDIA's benchmarks, not this pipeline's behaviour on Discord audio.
 frame-by-frame streaming with partial transcripts while someone is still
 talking, which would be the obvious way to build this. That low-level API
 (`conformer_stream_step()` with manually carried encoder cache state) lives
-only in NVIDIA's NeMo toolkit, not in `transformers`, and the chunk/cache
+only in NVIDIA's NeMo toolkit, not in `transformers`. The chunk/cache
 bookkeeping is unforgiving: get it slightly wrong and you get garbled text
 full of boundary artifacts. Since the bot only needs to catch a wake word and
 one command sentence rather than render live captions, VAD segmentation plus

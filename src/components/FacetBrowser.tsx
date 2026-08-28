@@ -1,6 +1,6 @@
 /**
  * FacetBrowser: React island. Filters the `work` collection by domain,
- * method, and year.
+ * method and year.
  *
  * All data arrives pre-serialized from `src/pages/work/index.astro`, plain
  * strings/numbers only, no `Date` objects and no raw collection entries

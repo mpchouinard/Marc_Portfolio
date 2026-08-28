@@ -13,7 +13,7 @@
  *
  * Fully server-rendered: complete and readable with JS disabled. The only
  * "interactivity" is CSS-only: `group`/`group-hover` traces a row on hover or
- * keyboard focus, and a `:has()` rule traces the matching column. Both are a
+ * keyboard focus. A `:has()` rule traces the matching column. Both are a
  * pure enhancement layered on markup that already reads correctly without
  * them, no JS, no React island.
  */
@@ -32,7 +32,7 @@ const work = await getCollection("work");
  *      project's stack tags EC2/RDS separately, so keeping them would just
  *      make "AWS" fail to match its own bracketed self.
  *   3. hand-disambiguate the punctuation-bearing language names: "C",
- *      "C++", "C#", and ".NET" would all collapse to the same key ("c") once
+ *      "C++", "C#" and ".NET" would all collapse to the same key ("c") once
  *      punctuation is stripped, which is wrong even though none of them
  *      happen to match a project today.
  *   4. strip every remaining space/hyphen/punctuation character.

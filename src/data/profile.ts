@@ -1,5 +1,5 @@
 /**
- * Single source of truth for identity, education, and experience.
+ * Single source of truth for identity, education and experience.
  *
  * This file drives the About page, the <head> structured data, AND the
  * generated resume PDF (see §5 of PLAN.md). Nothing here may be duplicated
@@ -21,7 +21,7 @@ export const profile = {
   // Every clause here is verifiable from the resume or the repos this site
   // links to. Lead with the research, because that is the differentiator.
   tagline:
-    "BS Computer Science and MS Artificial Intelligence at WPI, 2027. I benchmark retrieval for medical RAG on WPI's Turing cluster, and build applied ML systems end to end.",
+    "BS Computer Science and MS Artificial Intelligence at WPI, 2027. I benchmark retrieval for medical RAG on WPI's Turing cluster and build applied ML systems end to end.",
 } as const;
 
 export const education = [

@@ -121,7 +121,7 @@ function watchReducedMotion(): void {
   unsubscribeReducedMotion?.();
   unsubscribeReducedMotion = onReducedMotionChange((reduced) => {
     if (reduced) {
-      // Flip to the static composition immediately: stop hiding, and mark
+      // Flip to the static composition immediately: stop hiding, then mark
       // everything revealed so nothing is left mid-transition.
       observer?.disconnect();
       observer = null;

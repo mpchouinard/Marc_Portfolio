@@ -29,7 +29,7 @@ const { class: className } = Astro.props;
   import { initGlyphField } from "../scripts/glyph-field";
 
   // Idempotent: mounts any glyph-field canvas that hasn't been mounted yet.
-  // Astro dedupes this module script across instances, and this guard also
+  // Astro dedupes this module script across instances. This guard also
   // makes it safe if the component is ever reused on the same page or the
   // script re-runs after a View Transitions swap.
   function mountAll(): void {
@@ -40,7 +40,7 @@ const { class: className } = Astro.props;
       canvas.dataset.glyphMounted = "true";
       const handle = initGlyphField(canvas);
       // Publish the handle so the hero's ScrollTrigger can drive this
-      // canvas's intensity, and so scroll velocity can be piped in. There
+      // canvas's intensity and so scroll velocity can be piped in. There
       // is exactly ONE field canvas per document (mounted in Base.astro),
       // so a single global reference is correct rather than a list.
       (window as any).__glyphField = handle;

@@ -29,7 +29,7 @@ function formatMonthYear(date: Date) {
 
 // FacetBrowser is a React island: only plain, serialized data may cross the
 // boundary. `period.start`/`period.end` are `Date` objects on the collection
-// entry, so they're reduced to strings/numbers here, and facet option lists
+// entry, so they're reduced to strings/numbers here, with facet option lists
 // are derived here too rather than inside the component.
 const facetEntries: FacetWorkEntry[] = allEntries.map((entry: CollectionEntry<"work">) => {
   const d = entry.data;
@@ -54,12 +54,12 @@ const yearOptions = [...new Set(facetEntries.map((e) => e.year))].sort((a, b) =>
 
 <Base
   title="Work"
-  description="Research, coursework, and independent builds, plotted on one chronological spine and filterable by domain, method, and year."
+  description="Research, coursework and independent builds, plotted on one chronological spine and filterable by domain, method or year."
 >
   <header data-reveal>
     <h1 class="text-display">Work</h1>
     <p class="mt-3 max-w-prose text-lede text-muted">
-      Research, coursework, and independent projects share one timeline here rather than three
+      Research, coursework and independent projects share one timeline here rather than three
       separate lists. The trajectory is the point, not the category.
     </p>
   </header>

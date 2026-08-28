@@ -55,7 +55,7 @@ let tickerCallback: ((time: number) => void) | null = null;
 let swapListenerAttached = false;
 
 /**
- * Initializes smooth scroll (Lenis) driven by the GSAP ticker, and keeps
+ * Initializes smooth scroll (Lenis) driven by the GSAP ticker. It keeps
  * ScrollTrigger in sync with Lenis's virtual scroll position. Idempotent:
  * calling it again while already active just returns the existing teardown.
  *
