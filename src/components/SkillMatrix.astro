@@ -118,79 +118,87 @@ const totalCount = allSkills.length;
     {evidencedCount} of {totalCount} skills have at least one filled cell below
   </p>
 
-  <div class="flex flex-col gap-10" data-reveal-group>
-    {
-      groups.map((group) => (
-        <div data-reveal>
-          <h3 class="mb-3 font-mono text-micro uppercase tracking-widest text-muted">
-            {group.label}
-          </h3>
-          <div class="skill-matrix-wrap overflow-x-auto">
-            <table class="skill-matrix border-collapse">
-              <caption class="sr-only">
-                {group.label} skills cross-referenced against this site's projects. A
-                filled cell means the project's stack, methods, or domains include that
-                skill; an empty cell means nothing published here demonstrates it yet.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col" class="border border-rule px-3 py-1.5 text-left">
-                    <span class="sr-only">Skill</span>
-                  </th>
-                  {projects.map((p) => (
-                    <th
-                      scope="col"
-                      class="max-w-[9rem] whitespace-normal border border-rule px-3 py-1.5 text-left align-bottom font-mono text-micro font-medium uppercase tracking-wide text-muted"
-                    >
-                      <a
-                        href={`/work/${p.id}/`}
-                        class="transition-colors duration-200 ease-out-expo hover:text-accent focus-visible:text-accent"
-                      >
-                        {p.title}
-                      </a>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {group.skills.map((skill) => {
-                  const hasEvidence = skill.projectIds.size > 0;
+  {/* ONE table, not one per category. Three tables meant every project title
+      repeated three times as a column header — the single largest source of
+      visual repetition on the page. Categories are now <tbody> row-groups,
+      so the projects are named exactly once. */}
+  <div class="skill-matrix-wrap overflow-x-auto" data-reveal>
+    <table class="skill-matrix border-collapse">
+      <caption class="sr-only">
+        Skills cross-referenced against this site's projects. A filled cell means
+        that project's stack, methods, or domains include that skill; an empty
+        cell means nothing published here demonstrates it yet.
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col" class="border border-rule px-3 py-1.5 text-left">
+            <span class="sr-only">Skill</span>
+          </th>
+          {projects.map((p) => (
+            <th
+              scope="col"
+              class="max-w-[9rem] whitespace-normal border border-rule px-3 py-1.5 text-left align-bottom font-mono text-micro font-medium uppercase tracking-wide text-muted"
+            >
+              <a
+                href={`/work/${p.id}/`}
+                class="transition-colors duration-200 ease-out-expo hover:text-accent focus-visible:text-accent"
+              >
+                {p.title}
+              </a>
+            </th>
+          ))}
+        </tr>
+      </thead>
+
+      {groups.map((group) => (
+        <tbody>
+          {/* Category band: a full-width row label keeps the grouping without
+              needing a second table. */}
+          <tr>
+            <th
+              scope="colgroup"
+              colspan={projects.length + 1}
+              class="border border-rule bg-sunken px-3 py-2 text-left font-mono text-micro font-medium uppercase tracking-widest text-faint"
+            >
+              {group.label}
+            </th>
+          </tr>
+
+          {group.skills.map((skill) => {
+            const hasEvidence = skill.projectIds.size > 0;
+            return (
+              <tr class="group">
+                <th
+                  scope="row"
+                  class:list={[
+                    "whitespace-nowrap border border-rule px-3 py-1.5 text-left font-mono text-small font-normal transition-colors duration-200 ease-out-expo group-hover:bg-accent/10 group-focus-within:bg-accent/10",
+                    hasEvidence ? "text-text" : "text-faint",
+                  ]}
+                >
+                  {skill.name}
+                </th>
+                {projects.map((p) => {
+                  const used = skill.projectIds.has(p.id);
                   return (
-                    <tr class="group">
-                      <th
-                        scope="row"
-                        class:list={[
-                          "whitespace-nowrap border border-rule px-3 py-1.5 text-left font-mono text-small font-normal transition-colors duration-200 ease-out-expo group-hover:bg-accent/10 group-focus-within:bg-accent/10",
-                          hasEvidence ? "text-text" : "text-faint",
-                        ]}
-                      >
-                        {skill.name}
-                      </th>
-                      {projects.map((p) => {
-                        const used = skill.projectIds.has(p.id);
-                        return (
-                          <td class="min-w-[3rem] border border-rule px-3 py-1.5 text-center transition-colors duration-200 ease-out-expo group-hover:bg-accent/10 group-focus-within:bg-accent/10">
-                            {used && (
-                              <>
-                                <span
-                                  aria-hidden="true"
-                                  class="mx-auto block h-1.5 w-1.5 rounded-full bg-accent-dim transition-colors duration-200 ease-out-expo group-hover:bg-accent group-focus-within:bg-accent"
-                                />
-                                <span class="sr-only">used in {p.title}</span>
-                              </>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
+                    <td class="min-w-[3rem] border border-rule px-3 py-1.5 text-center transition-colors duration-200 ease-out-expo group-hover:bg-accent/10 group-focus-within:bg-accent/10">
+                      {used && (
+                        <>
+                          <span
+                            aria-hidden="true"
+                            class="mx-auto block h-1.5 w-1.5 rounded-full bg-accent-dim transition-colors duration-200 ease-out-expo group-hover:bg-accent group-focus-within:bg-accent"
+                          />
+                          <span class="sr-only">used in {p.title}</span>
+                        </>
+                      )}
+                    </td>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ))
-    }
+              </tr>
+            );
+          })}
+        </tbody>
+      ))}
+    </table>
   </div>
 </section>
 

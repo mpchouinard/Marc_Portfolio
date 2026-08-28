@@ -1,7 +1,26 @@
 ---
 /**
  * Home. Composed by the orchestrator from Wave 1's components:
- *   Hero (agent C) -> selected work (agent D's ProjectCard) -> route to /work/.
+ *   Hero (agent C) -> Selected work (agent D's ProjectCard) -> Trajectory
+ *   (education + roles spine) -> Skills -> Education -> Contact.
+ *
+ * Projects are listed exactly ONCE on this page, in "Selected work" below.
+ * Trajectory no longer carries a projects lane (see Trajectory.astro) — its
+ * job is the degree/roles spine, not a third project listing.
+ *
+ * Every section below is deliberately given its OWN structural treatment —
+ * label placement, rule weight/position, bleed, rhythm — rather than the
+ * repeated "label + border-b" header that used to run down the whole page.
+ * A reader scrolling fast should be able to tell which section they're in
+ * from the layout alone:
+ *   01 Selected work — rail number beside an inline label, thick top rule,
+ *      CTA demoted to a separate closing line below the grid.
+ *   02 Trajectory     — centered/stacked, short centered divider.
+ *   03 Skills         — full-bleed raised band (SkillMatrix supplies its
+ *      own inset container; this wrapper only frames it).
+ *   04 Education      — asymmetric rail + capped-width column.
+ *   Contact           — breaks the numbering entirely; the closing
+ *      statement, not another item in the sequence.
  *
  * `bleed` strips <main>'s padded max-width box so the hero can run full-bleed;
  * every section below therefore supplies its own container.
@@ -13,6 +32,7 @@ import ProjectCard from "../components/ProjectCard.astro";
 import Trajectory from "../components/Trajectory.astro";
 import SkillMatrix from "../components/SkillMatrix.astro";
 import EducationPanel from "../components/EducationPanel.astro";
+import Contact from "../components/Contact.astro";
 import { getCollection } from "astro:content";
 import { profile } from "../data/profile";
 
@@ -28,40 +48,68 @@ const featured = (await getCollection("work"))
     featured.length > 0 && (
       <section class="mx-auto w-full max-w-[72rem] px-6 py-24 md:px-10 md:py-32">
         <header
-          class="mb-10 flex items-baseline justify-between gap-6 border-b border-rule pb-4"
+          class="mb-12 grid grid-cols-[2.5rem_1fr] items-baseline gap-x-4 border-t-2 border-rule pt-4"
           data-reveal
         >
-          <h2 class="font-mono text-micro uppercase tracking-[0.2em] text-faint">
-            Selected work
-          </h2>
+          <span class="font-mono text-micro text-faint" aria-hidden="true">
+            01
+          </span>
+          <h2 class="font-mono text-micro uppercase tracking-[0.2em] text-faint">Selected work</h2>
+        </header>
+
+        <div class="grid gap-5 md:grid-cols-2" data-reveal-group>
+          {featured.map((entry) => <ProjectCard work={entry} />)}
+        </div>
+
+        <div class="mt-10 flex justify-end border-t border-rule pt-4" data-reveal>
           <a
             href="/work/"
             class="font-mono text-micro uppercase tracking-[0.2em] text-muted transition-colors hover:text-accent"
           >
             All work →
           </a>
-        </header>
-
-        <div class="grid gap-5 md:grid-cols-2" data-reveal-group>
-          {featured.map((entry) => <ProjectCard work={entry} />)}
         </div>
       </section>
     )
   }
 
-  {/* Degree, roles and projects on ONE axis — PLAN.md §2's "container made
-      visible", applied to the whole record rather than just the projects. */}
-  <section class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
+  {/* Degree and roles on one axis — PLAN.md §2's "container made visible",
+      applied to the biography spine. Projects live in "Selected work" above
+      and the full timeline/browser on /work/, not here — Trajectory itself
+      supplies its own <section>, so this is a plain div, not a nested one. */}
+  <div class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
     <Trajectory />
-  </section>
+  </div>
 
   {/* Skills cross-referenced against the projects that actually evidence
-      them. Unlinked skills are shown plainly rather than padded out. */}
-  <section class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
+      them. A full-bleed raised band — SkillMatrix supplies its own inset
+      container and its own <section>, so this wrapper adds no horizontal
+      padding and stays a div rather than nesting a second section. */}
+  <div class="border-y border-rule bg-raised">
+    <p
+      class="mx-auto w-full max-w-[72rem] px-6 pt-10 font-mono text-micro uppercase tracking-[0.2em] text-faint md:px-10"
+      aria-hidden="true"
+      data-reveal
+    >
+      03
+    </p>
     <SkillMatrix />
-  </section>
+  </div>
 
-  <section class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
-    <EducationPanel />
-  </section>
+  {/* Education: an offset rail + capped-width column rather than a centered
+      or full-bleed treatment, so it reads distinctly from the three
+      sections above it. EducationPanel supplies its own <section>, so this
+      wrapper is a div. */}
+  <div class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
+    <div class="grid gap-6 md:grid-cols-[2.5rem_1fr] md:gap-10">
+      <p class="font-mono text-micro text-faint" aria-hidden="true" data-reveal>
+        04
+      </p>
+      <div class="md:max-w-[52rem]">
+        <EducationPanel />
+      </div>
+    </div>
+  </div>
+
+  <Contact />
 </Base>

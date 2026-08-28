@@ -1,24 +1,27 @@
 ---
 /**
  * /work/ — the browse page. Composes:
- *   1. A featured strip (ProjectCard grid) — SSR.
- *   2. The full chronological Timeline — SSR, works with JS off.
- *   3. FacetBrowser, a React island hydrated `client:visible` that lets a
+ *   1. The full chronological Timeline — SSR, works with JS off.
+ *   2. FacetBrowser, a React island hydrated `client:visible` that lets a
  *      visitor filter the same data by domain / method / year.
  *
- * The page is fully useful with JS disabled: (1) and (2) already render
+ * There used to be a third listing here too — a featured strip (ProjectCard
+ * grid) above the Timeline. It was cut: the Timeline already lists every
+ * entry chronologically and FacetBrowser already filters every entry, so a
+ * featured subset above both was a third listing of the same projects for no
+ * distinct job. Featured project cards still get their one dedicated spot,
+ * on the homepage's "Selected work".
+ *
+ * The page is fully useful with JS disabled: the Timeline already renders
  * every entry server-side. FacetBrowser is a pure enhancement layered on
  * top, not a requirement for the content to exist.
  */
 import { getCollection, type CollectionEntry } from "astro:content";
 import Base from "../../layouts/Base.astro";
-import ProjectCard from "../../components/ProjectCard.astro";
 import Timeline from "../../components/Timeline.astro";
 import FacetBrowser, { type FacetWorkEntry } from "../../components/FacetBrowser.tsx";
 
 const allEntries = await getCollection("work");
-
-const featured = allEntries.filter((entry) => entry.data.featured);
 
 function formatMonthYear(date: Date) {
   return date.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
@@ -60,21 +63,6 @@ const yearOptions = [...new Set(facetEntries.map((e) => e.year))].sort((a, b) =>
       separate lists — the point is the trajectory, not the category.
     </p>
   </header>
-
-  {
-    featured.length > 0 && (
-      <section aria-labelledby="featured-heading" class="mt-16" data-reveal>
-        <h2 id="featured-heading" class="font-mono text-micro uppercase tracking-widest text-muted">
-          Featured
-        </h2>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2" data-reveal-group>
-          {featured.map((entry) => (
-            <ProjectCard work={entry} />
-          ))}
-        </div>
-      </section>
-    )
-  }
 
   <section aria-labelledby="timeline-heading" class="mt-16" data-reveal>
     <h2 id="timeline-heading" class="font-mono text-micro uppercase tracking-widest text-muted">

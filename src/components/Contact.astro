@@ -1,0 +1,80 @@
+---
+/**
+ * Contact — the page's closing statement, not a footer duplicate.
+ *
+ * Footer.astro already prints a small-print contact line on every page —
+ * that's chrome. This is content: the last thing "Selected work" through
+ * "Education" build toward, so it gets the weight of a real section — large
+ * type, generous space, a real mailto as the primary action.
+ *
+ * It deliberately breaks the 01–04 index numbering the sections above it
+ * run on (see index.astro) and drops the border-b-header pattern entirely:
+ * it isn't another item in that sequence, it's the exit. That contrast IS
+ * its structural identity — a reader scrolling fast should feel the page
+ * end here even without reading a word.
+ *
+ * Every value is drawn from src/data/profile.ts. No availability,
+ * job-search, or graduation copy is asserted here — CLAUDE.md §3 forbids
+ * inventing any of that, and profile.ts doesn't carry it. LinkedIn renders
+ * only when profile.links.linkedin is actually set.
+ */
+import { profile } from "../data/profile";
+
+const hasLinkedin = profile.links.linkedin.length > 0;
+---
+
+<section aria-labelledby="contact-heading" class="border-t border-rule">
+  <div class="mx-auto w-full max-w-[72rem] px-6 py-28 md:px-10 md:py-40">
+    <div class="flex flex-col items-start gap-8 md:gap-12" data-reveal-group>
+      <h2
+        id="contact-heading"
+        class="font-mono text-micro uppercase tracking-[0.2em] text-faint"
+        data-reveal
+      >
+        Contact
+      </h2>
+
+      <p class="font-mono text-title text-muted" data-reveal>{profile.name}</p>
+
+      <a
+        href={`mailto:${profile.email}`}
+        data-reveal
+        class="group inline-flex flex-wrap items-baseline gap-x-4 gap-y-2 font-mono text-display leading-[1.05] text-bright transition-colors duration-200 ease-out-expo hover:text-accent"
+      >
+        <span class="break-all">{profile.email}</span>
+        <span
+          aria-hidden="true"
+          class="text-accent transition-transform duration-200 ease-out-expo group-hover:translate-x-2"
+        >
+          →
+        </span>
+      </a>
+
+      <div
+        class="flex flex-wrap gap-x-8 gap-y-3 font-mono text-small uppercase tracking-wide text-muted"
+        data-reveal
+      >
+        <a
+          href={profile.links.github}
+          target="_blank"
+          rel="noreferrer noopener"
+          class="transition-colors hover:text-accent"
+        >
+          GitHub ↗
+        </a>
+        {
+          hasLinkedin && (
+            <a
+              href={profile.links.linkedin}
+              target="_blank"
+              rel="noreferrer noopener"
+              class="transition-colors hover:text-accent"
+            >
+              LinkedIn ↗
+            </a>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>
