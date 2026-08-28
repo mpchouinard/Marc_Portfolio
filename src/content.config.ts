@@ -19,7 +19,7 @@ const work = defineCollection({
     methods: z.array(z.string()),              // transformers, diffusion, GNN, RLHF, contrastive
     stack: z.array(z.string()),                // pytorch, jax, cuda, ray, wandb
 
-    // structured results — renders as a comparison table, no hand-written HTML
+    // structured results: renders as a comparison table, no hand-written HTML
     results: z.array(z.object({
       metric: z.string(),
       dataset: z.string(),

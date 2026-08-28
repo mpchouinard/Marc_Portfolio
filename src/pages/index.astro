@@ -5,21 +5,21 @@
  *   (education + roles spine) -> Skills -> Education -> Contact.
  *
  * Projects are listed exactly ONCE on this page, in "Selected work" below.
- * Trajectory no longer carries a projects lane (see Trajectory.astro) — its
+ * Trajectory no longer carries a projects lane (see Trajectory.astro): its
  * job is the degree/roles spine, not a third project listing.
  *
- * Every section below is deliberately given its OWN structural treatment —
- * label placement, rule weight/position, bleed, rhythm — rather than the
+ * Every section below is deliberately given its OWN structural treatment:
+ * label placement, rule weight/position, bleed, rhythm, rather than the
  * repeated "label + border-b" header that used to run down the whole page.
  * A reader scrolling fast should be able to tell which section they're in
  * from the layout alone:
- *   01 Selected work — rail number beside an inline label, thick top rule,
+ *   01 Selected work: rail number beside an inline label, thick top rule,
  *      CTA demoted to a separate closing line below the grid.
- *   02 Trajectory     — centered/stacked, short centered divider.
- *   03 Skills         — full-bleed raised band (SkillMatrix supplies its
+ *   02 Trajectory     : centered/stacked, short centered divider.
+ *   03 Skills         : full-bleed raised band (SkillMatrix supplies its
  *      own inset container; this wrapper only frames it).
- *   04 Education      — asymmetric rail + capped-width column.
- *   Contact           — breaks the numbering entirely; the closing
+ *   04 Education      : asymmetric rail + capped-width column.
+ *   Contact           : breaks the numbering entirely; the closing
  *      statement, not another item in the sequence.
  *
  * `bleed` strips <main>'s padded max-width box so the hero can run full-bleed;
@@ -73,16 +73,16 @@ const featured = (await getCollection("work"))
     )
   }
 
-  {/* Degree and roles on one axis — PLAN.md §2's "container made visible",
+  {/* Degree and roles on one axis: PLAN.md §2's "container made visible",
       applied to the biography spine. Projects live in "Selected work" above
-      and the full timeline/browser on /work/, not here — Trajectory itself
+      and the full timeline/browser on /work/, not here. Trajectory itself
       supplies its own <section>, so this is a plain div, not a nested one. */}
   <div class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
     <Trajectory />
   </div>
 
   {/* Skills cross-referenced against the projects that actually evidence
-      them. A full-bleed raised band — SkillMatrix supplies its own inset
+      them. A full-bleed raised band: SkillMatrix supplies its own inset
       container and its own <section>, so this wrapper adds no horizontal
       padding and stays a div rather than nesting a second section. */}
   <div class="border-y border-rule bg-raised">

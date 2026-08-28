@@ -1,6 +1,6 @@
 ---
 /**
- * SHARED LAYOUT CONTRACT — owned by Wave 0 / the orchestrator.
+ * SHARED LAYOUT CONTRACT: owned by Wave 0 / the orchestrator.
  * Wave 1 agent A may refine the chrome it renders (Nav/Footer), but the
  * Props interface below is FIXED: three other agents code against it in
  * parallel. Do not rename or remove a prop.
@@ -14,7 +14,7 @@ import { profile, education, skills } from "../data/profile";
 export interface Props {
   /** Page <title>. The site name is appended automatically. */
   title: string;
-  /** Meta description. Required — every page gets one. */
+  /** Meta description. Required: every page gets one. */
   description: string;
   /** True when the page opens with a full-bleed hero, so the nav sits
    *  transparently over it instead of on its own ruled bar. */
@@ -30,7 +30,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 
 /**
  * Person structured data. This is what search engines and LinkedIn-style
- * unfurlers read, so it is worth getting right — but every field is drawn
+ * unfurlers read, so it is worth getting right, but every field is drawn
  * from profile.ts, never asserted here. `sameAs` omits empty links rather
  * than emitting a broken URL.
  */
@@ -80,10 +80,10 @@ const jsonLd = {
     <slot name="head" />
 
     {/*
-      REVEAL GUARD — must run BEFORE first paint, and must be inline/blocking.
+      REVEAL GUARD: must run BEFORE first paint, and must be inline/blocking.
       If the `js-reveal` class is added later (from a module script), the
       browser has already painted the elements visible and then *transitions*
-      them to the hidden state — content visibly fades OUT before fading back
+      them to the hidden state: content visibly fades OUT before fading back
       in on scroll. Setting it here means elements are hidden from the very
       first frame, so there is no flash and no backwards transition.
 
@@ -106,7 +106,7 @@ const jsonLd = {
     {/* ONE glyph-field canvas for the whole document, fixed behind all
         content. The hero drives it to full intensity; below the hero it
         thins out but never stops, so the field follows the reader down the
-        page. Decorative only — aria-hidden, not focusable, pointer-events
+        page. Decorative only: aria-hidden, not focusable, pointer-events
         none, and pinned behind every section via z-index. */}
     <div class="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
       <GlyphField />
@@ -119,7 +119,7 @@ const jsonLd = {
 
     <style is:global>
       /*
-        REVEAL — the hidden start state is scoped to `html.js-reveal`, which
+        REVEAL: the hidden start state is scoped to `html.js-reveal`, which
         reveal.ts adds to <html> only after confirming JS is running AND
         motion is allowed. Without that class nothing here applies, so a
         no-JS visitor or a crawler sees the fully composed page. This is why

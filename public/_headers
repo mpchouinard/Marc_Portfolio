@@ -1,0 +1,12 @@
+# Cloudflare Pages reads this file from the build output root.
+# Astro copies everything in public/ to dist/ verbatim, so it lands correctly.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
+
+# Astro fingerprints everything under /_astro/, so it is safe to cache forever.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable

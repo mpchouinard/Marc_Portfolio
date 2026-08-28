@@ -1,11 +1,11 @@
 ---
 /**
- * ResultsTable — renders the `results` frontmatter array as a real
+ * ResultsTable: renders the `results` frontmatter array as a real
  * comparison table. Owned by Wave 1 agent B.
  *
  * The schema carries no "higher/lower is better" direction flag (a metric
  * like latency is better lower; accuracy is better higher), so the delta
- * column is shown as a plain signed number — never colored as good/bad.
+ * column is shown as a plain signed number, never colored as good/bad.
  *
  * Renders nothing when `results` is empty.
  */
@@ -59,10 +59,10 @@ const fmtDelta = (value: number, baseline: number | undefined, unit?: string): s
               <td class="px-4 py-2.5 text-muted">{r.dataset}</td>
               <td class="px-4 py-2.5 text-right text-bright">{fmtValue(r.value, r.unit)}</td>
               <td class="px-4 py-2.5 text-right text-muted">
-                {r.baseline !== undefined ? fmtValue(r.baseline, r.unit) : "—"}
+                {r.baseline !== undefined ? fmtValue(r.baseline, r.unit) : "n/a"}
               </td>
               <td class="px-4 py-2.5 text-right text-muted">
-                {fmtDelta(r.value, r.baseline, r.unit) ?? "—"}
+                {fmtDelta(r.value, r.baseline, r.unit) ?? "n/a"}
               </td>
             </tr>
           ))}

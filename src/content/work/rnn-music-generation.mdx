@@ -23,6 +23,7 @@ artifacts:
     label: "POP909 dataset"
 summary: "PyTorch RNN that generates pop music as readable sheet music, using an interval-based token system that cuts vocabulary size by 80%."
 featured: false
+cover: "./covers/rnn-music-generation.png"
 ---
 
 import ResultsTable from "../../components/ResultsTable.astro";
@@ -37,9 +38,9 @@ capacity on a transformation that is musically trivial.
 
 ## Data
 
-- **Source:** [POP909](https://github.com/music-x-lab/POP909-Dataset) — 909 pop
+- **Source:** [POP909](https://github.com/music-x-lab/POP909-Dataset), 909 pop
   songs in MIDI, converted through an automated tokenization pipeline
-- **Representation:** interval-based tokens — the *distance* between notes rather than absolute pitch
+- **Representation:** interval-based tokens: the *distance* between notes rather than absolute pitch
 - **Output format:** generated tokens are piped back to sheet music via music21, so results are immediately readable and playable
 
 ## Approach
@@ -65,7 +66,7 @@ generated sheet music at the other end.
 
 <ResultsTable results={frontmatter.results} />
 
-{/* TODO(marc): the 80% vocabulary reduction is captured. What did it buy you —
+{/* TODO(marc): the 80% vocabulary reduction is captured. What did it buy you:
      lower perplexity, faster convergence, fewer epochs to coherent output?
      Even a rough before/after belongs in `results:`. */}
 

@@ -1,8 +1,8 @@
 /**
- * FacetBrowser — React island. Filters the `work` collection by domain,
+ * FacetBrowser: React island. Filters the `work` collection by domain,
  * method, and year.
  *
- * All data arrives pre-serialized from `src/pages/work/index.astro` — plain
+ * All data arrives pre-serialized from `src/pages/work/index.astro`, plain
  * strings/numbers only, no `Date` objects and no raw collection entries
  * cross the island boundary. Facet option lists are derived server-side too
  * and passed in as props.
@@ -25,7 +25,7 @@ export interface FacetWorkEntry {
   featured: boolean;
   year: number;
   startLabel: string;
-  /** null means the entry is ongoing — represented honestly, not with a fake end date. */
+  /** null means the entry is ongoing: represented honestly, not with a fake end date. */
   endLabel: string | null;
 }
 

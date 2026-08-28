@@ -22,7 +22,7 @@ export default defineConfig({
   integrations: [react(), mdx(), sitemap()],
 
   markdown: {
-    // Astro 6.4 moved plugin config onto `processor` — the top-level
+    // Astro 6.4 moved plugin config onto `processor`: the top-level
     // `remarkPlugins`/`rehypePlugins` keys are deprecated.
     processor: unified({
       remarkPlugins: [remarkMath],

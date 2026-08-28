@@ -1,6 +1,6 @@
 ---
 /**
- * GlyphField — the canvas surface for the mathematical scalar-field
+ * GlyphField: the canvas surface for the mathematical scalar-field
  * background. Purely decorative: `aria-hidden`, no `tabindex`, so it never
  * enters the keyboard tab order and is invisible to assistive tech.
  *
@@ -51,7 +51,7 @@ const { class: className } = Astro.props;
   mountAll();
 
   // If a later page uses View Transitions, astro:page-load fires after
-  // every swap (including the first load) — re-run so a freshly swapped-in
+  // every swap (including the first load), re-run so a freshly swapped-in
   // canvas gets mounted too. Harmless no-op today since nothing unmounts it.
   document.addEventListener("astro:page-load", mountAll);
 </script>

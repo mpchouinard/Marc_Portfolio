@@ -1,5 +1,5 @@
 /**
- * The reveal engine — implements the contract in CLAUDE.md §5.
+ * The reveal engine: implements the contract in CLAUDE.md §5.
  *
  * Markup opts in declaratively; no component writes its own observer:
  *
@@ -11,7 +11,7 @@
  *
  * 1. NO-JS SAFETY. The hidden start state lives entirely under
  *    `html.js-reveal`, a class this module adds to <html> itself. If this
- *    script never runs — JS disabled, a bundle error, a crawler — nothing is
+ *    script never runs: JS disabled, a bundle error, a crawler, nothing is
  *    ever hidden and the page reads exactly as it would without motion.
  *    There is deliberately no `opacity: 0` anywhere in static CSS.
  *
@@ -21,7 +21,7 @@
  *    animation.
  *
  * The animation itself is a plain CSS transition (see Base.astro's style
- * block) rather than GSAP — these are one-shot opacity/transform tweens and
+ * block) rather than GSAP: these are one-shot opacity/transform tweens and
  * the compositor handles them without any JS on the frame path.
  */
 
@@ -81,7 +81,7 @@ export function initReveal(): void {
   teardownReveal();
 
   // Reduced motion: never enable the hidden state. Nothing to observe,
-  // nothing to animate — the page is simply already in its final form.
+  // nothing to animate: the page is simply already in its final form.
   if (prefersReducedMotion()) {
     document.documentElement.classList.remove(ENABLED_CLASS);
     watchReducedMotion();

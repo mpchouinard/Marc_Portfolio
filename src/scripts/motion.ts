@@ -1,5 +1,5 @@
 /**
- * Motion system — Lenis smooth scroll wired to GSAP ScrollTrigger.
+ * Motion system: Lenis smooth scroll wired to GSAP ScrollTrigger.
  *
  * Owned by Wave 1 Agent C. This is the ONLY place Lenis/GSAP get
  * instantiated; `Hero.astro` and any future page that wants the smooth
@@ -8,7 +8,7 @@
  *
  * PLAN.md §4 / CLAUDE.md §5: `prefers-reduced-motion` gets a REAL static
  * fallback, not a shortened duration. When the media query matches, this
- * module never constructs Lenis and never starts a rAF loop — the browser's
+ * module never constructs Lenis and never starts a rAF loop: the browser's
  * native scroll stands untouched, so there is nothing to "trap" scroll-jack
  * style. Callers that also drive their own canvas loops (GlyphField) must
  * make the same check independently; `prefersReducedMotion()` /
@@ -56,7 +56,7 @@ let swapListenerAttached = false;
 
 /**
  * Initializes smooth scroll (Lenis) driven by the GSAP ticker, and keeps
- * ScrollTrigger in sync with Lenis's virtual scroll position. Idempotent —
+ * ScrollTrigger in sync with Lenis's virtual scroll position. Idempotent:
  * calling it again while already active just returns the existing teardown.
  *
  * Under `prefers-reduced-motion: reduce` this is a deliberate no-op: no

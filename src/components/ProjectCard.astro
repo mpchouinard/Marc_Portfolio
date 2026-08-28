@@ -1,6 +1,6 @@
 ---
 /**
- * ProjectCard — one `work` collection entry rendered as a single clickable
+ * ProjectCard: one `work` collection entry rendered as a single clickable
  * card. The whole card is one accessible <a>; no interactive elements are
  * nested inside it.
  */
@@ -27,7 +27,7 @@ const periodLabel = endYear
     : `${startYear}–${endYear}`
   : `${startYear}–ongoing`;
 
-// A handful of chips drawn from real taxonomy fields — never fabricated.
+// A handful of chips drawn from real taxonomy fields, never fabricated.
 const chips = [...d.domains.slice(0, 3), ...d.methods.slice(0, 2)];
 ---
 

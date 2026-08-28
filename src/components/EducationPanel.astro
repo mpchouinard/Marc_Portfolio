@@ -1,6 +1,6 @@
 ---
 /**
- * Education — the academic record as a ledger, not a card.
+ * Education: the academic record as a ledger, not a card.
  *
  * The dates live in `Trajectory.astro` (education is the spine of that
  * chart), so this component deliberately does NOT repeat a timeline. It
@@ -72,7 +72,7 @@ function extractGpa(honors: readonly string[]) {
             )}
           </div>
 
-          {/* Honors — hairline rows, no chips, no boxes. */}
+          {/* Honors: hairline rows, no chips, no boxes. */}
           {otherHonors.length > 0 && (
             <ul class="border-b border-rule" data-reveal>
               {otherHonors.map((h) => (
@@ -86,7 +86,7 @@ function extractGpa(honors: readonly string[]) {
             </ul>
           )}
 
-          {/* Coursework — a dense ruled index, numbered so it reads as a
+          {/* Coursework: a dense ruled index, numbered so it reads as a
               record rather than a tag cloud. */}
           {edu.coursework.length > 0 && (
             <div class="pt-8" data-reveal>

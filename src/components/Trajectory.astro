@@ -1,16 +1,16 @@
 ---
 /**
- * Trajectory — the biography spine.
+ * Trajectory: the biography spine.
  *
  * PLAN.md §2 argues that education and roles belong on ONE spine rather than
  * disconnected lists, because the overlap is the story: the degree and the
  * paid work happen at the same time. Projects used to run as a third lane
- * here too, but they're covered better elsewhere now — "Selected work" on
- * the homepage, and the full timeline + faceted browser on /work/ — so this
+ * here too, but they're covered better elsewhere now: "Selected work" on
+ * the homepage, and the full timeline + faceted browser on /work/, so this
  * stays a two-lane spine: degree, then roles, against a single shared month
  * axis with a NOW marker.
  *
- * Everything is computed from real data — `profile.ts` for education and
+ * Everything is computed from real data, with `profile.ts` for education and
  * roles. Nothing here is authored copy.
  *
  * Geometry note: months are converted to an absolute integer index
@@ -53,7 +53,7 @@ const eduLanes: Lane[] = education.map((e) => {
     startIdx,
     endIdx,
     ongoing: false,
-    // `expected: true` is a real flag in the data — surface it rather than
+    // `expected: true` is a real flag in the data: surface it rather than
     // presenting a projected graduation as a settled fact.
     rangeText: `${fmtIdx(startIdx)} – ${fmtIdx(endIdx)}${e.expected ? " (expected)" : ""}`,
   };
@@ -106,7 +106,7 @@ const nowLeft = pct(nowIdx);
     <h2 id="trajectory-heading" class="font-mono text-micro uppercase tracking-[0.2em] text-faint">
       02 / Trajectory
     </h2>
-    <p class="font-mono text-title text-bright">{fmtIdx(axisStart + 2)} — now</p>
+    <p class="font-mono text-title text-bright">{fmtIdx(axisStart + 2)} to now</p>
     <span class="mt-1 h-px w-16 bg-rule" aria-hidden="true"></span>
   </header>
 
@@ -156,7 +156,7 @@ const nowLeft = pct(nowIdx);
           <div class="flex flex-col gap-3" data-reveal-group>
             {group.lanes.map((lane) => (
               <div class="group/lane relative" data-reveal>
-                {/* label row — always text, never colour-only */}
+                {/* label row: always text, never colour-only */}
                 <div class="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono text-small">
                   <span class="text-bright">{lane.label}</span>
                   <span class="text-muted">{lane.sublabel}</span>

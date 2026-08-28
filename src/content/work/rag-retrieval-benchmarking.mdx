@@ -5,7 +5,7 @@ period:
   start: 2026-01-15
 status: ongoing
 role: "undergraduate researcher"
-affiliation: "WPI — Prof. Gerych's group"
+affiliation: "WPI, Prof. Gerych's group"
 collaborators: ["PhD students, Gerych lab"]
 domains: ["nlp", "information-retrieval", "medical"]
 methods: ["rag", "tf-idf", "bm25", "graph-retrieval", "dense-retrieval"]
@@ -23,7 +23,7 @@ import ArtifactList from "../../components/ArtifactList.astro";
 
 A retrieval-augmented generation system is only as good as the documents it
 retrieves, but "which retriever?" is usually answered by convention rather than
-by measurement — and in the medical domain a bad retrieval is not a bad answer,
+by measurement. In the medical domain a bad retrieval is not a bad answer,
 it is a wrong one. This work asks whether the retrieval methods people default
 to actually hold up on medical corpora, where terminology is dense, synonymy is
 rampant, and the cost of a miss is high.
@@ -40,9 +40,9 @@ rampant, and the cost of a miss is high.
 The comparison holds the generator fixed and varies only the retriever, so any
 difference in downstream answer quality is attributable to retrieval:
 
-- **TF-IDF** — sparse lexical baseline
-- **BM25** — the standard sparse benchmark
-- **Graph-based retrieval** — exploits structure between documents rather than
+- **TF-IDF:** sparse lexical baseline
+- **BM25:** the standard sparse benchmark
+- **Graph-based retrieval:** exploits structure between documents rather than
   treating the corpus as a bag of independent passages
 
 Benchmarking jobs are dispatched as Slurm batch arrays on WPI's Turing ARC
@@ -56,15 +56,15 @@ tractable rather than a weekend of laptop time.
 {/* This section auto-renders from the `results` frontmatter once numbers exist. */}
 
 {/* TODO(marc): highest-value gap in the whole portfolio. Fill in `results:`
-     with the metrics you already produced for the MEDgevity application —
-     recall@k, nDCG, or whatever SCT-Bench reports — one row per
+     with the metrics you already produced for the MEDgevity application:
+     recall@k, nDCG, or whatever SCT-Bench reports, one row per
      (metric, dataset, retriever) with the TF-IDF number as `baseline`. */}
 
 ## What didn't work
 
 {/* TODO(marc): dead ends are the strongest signal in a research writeup. Cluster
      failures, retrievers that underperformed their reputation, Slurm jobs that
-     OOM'd and what you changed — anything real. */}
+     OOM'd and what you changed, anything real. */}
 
 ## Artifacts
 

@@ -1,6 +1,6 @@
 ---
 /**
- * Site nav — chrome only. Owned by Wave 1 agent A.
+ * Site nav: chrome only. Owned by Wave 1 agent A.
  * Props are fixed by Base.astro's contract: `transparent?: boolean`.
  */
 import { profile } from "../data/profile";
@@ -15,7 +15,7 @@ const path = Astro.url.pathname;
 const isHome = path === "/";
 const isWork = path.startsWith("/work");
 
-// Short mark from the owner's initials — identity lives in profile.ts,
+// Short mark from the owner's initials: identity lives in profile.ts,
 // this just derives a glyph from it rather than retyping a name.
 const mark = profile.name
   .split(" ")
@@ -58,7 +58,7 @@ const mark = profile.name
 
 <style>
   /* Base state is set by Tailwind utility classes above. This only owns the
-     scroll-triggered transition — the global prefers-reduced-motion rule in
+     scroll-triggered transition, the global prefers-reduced-motion rule in
      global.css collapses these durations to ~0 automatically. */
   [data-nav] {
     transition:

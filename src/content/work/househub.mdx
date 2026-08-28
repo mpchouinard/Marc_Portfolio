@@ -1,0 +1,113 @@
+---
+title: "HouseHub"
+kind: coursework
+period:
+  start: 2026-04-10
+  end: 2026-04-26
+status: complete
+role: "solo"
+domains: ["hci", "web-systems", "databases"]
+methods: ["hi-fi-prototyping", "relational-modeling", "session-auth", "crud"]
+stack: ["python", "flask", "flask-login", "sqlalchemy", "sqlite", "jinja2", "werkzeug", "bootstrap", "html", "css"]
+results: []
+artifacts:
+  - type: repo
+    url: "https://github.com/mpchouinard/HouseHub"
+    label: "Source on GitHub"
+summary: "Hi-fi Flask prototype for an HCI course: one shared dashboard where roommates track chores, supplies, and maintenance issues."
+featured: false
+cover: "./covers/househub.png"
+---
+
+import ResultsTable from "../../components/ResultsTable.astro";
+import ArtifactList from "../../components/ArtifactList.astro";
+
+## Problem
+
+Shared apartments run on memory and nagging. Chores get done twice or not at
+all, nobody notices the toilet paper is gone until it matters, and the leak
+under the sink is everyone's problem and therefore no one's.
+
+This was built as a **hi-fi prototype for an HCI course**. The goal was a
+thing real people could be sat in front of and asked to use, not a production
+service. That framing drove almost every decision below, including the ones
+that would be wrong in a shipped product.
+
+{/* TODO(marc): course code + number, if you want it on the page */}
+
+## Data
+
+No external dataset. The domain model is the artifact:
+
+- **House**: a named household with a join code, owning everything below.
+- **Roomie**: a member of one house; `Flask-Login`'s `UserMixin`.
+- **Chore**: title, `todo` / `in_progress` / `complete`, optional assignee,
+  assigned timestamp, optional due date.
+- **Supply**: a consumable with an `ok` / `low` / `out` status.
+- **Issue**: a maintenance report with `open` / `resolved` and a reporter.
+
+Every child cascades from `House` with `all, delete-orphan`, so deleting a
+household leaves nothing orphaned. The app seeds one demo household on first
+boot so the prototype has something to show the moment it starts. The
+seed data is fictional.
+
+## Approach
+
+A single Flask blueprint, server-rendered Jinja templates, SQLite through
+SQLAlchemy's typed `Mapped[]` API, and Bootstrap 5 over a small amount of
+hand-written CSS.
+
+The interface is deliberately **one page**. `/house/<code>` renders roommates,
+every chore, supplies, and issues together, because the research question was
+whether a household would keep a shared board current, and a board that hides
+half its state behind navigation cannot answer that.
+
+Mutations are small, single-purpose POST routes rather than one form: update a
+chore's status, add a chore, update a supply, report an issue, resolve an
+issue. Each one re-validates that the target row actually belongs to the
+household in the URL before touching it, so a guessed row id from another
+house 404s instead of writing.
+
+One ownership rule is enforced server-side: only the roommate a chore is
+assigned to can change its status. Supplies and issues are deliberately open
+to anyone in the house, since the point of tracking them is that whoever
+notices, reports.
+
+## Experiments
+
+<ResultsTable results={frontmatter.results} />
+
+No quantitative evaluation was run. This was a prototype built to be used and
+observed, and inventing numbers for it would be worse than having none.
+
+{/* TODO(marc): if the HCI course ran usability sessions, task-completion or
+    SUS numbers would go here (real values only). */}
+
+## What didn't work
+
+**Password hashing that nothing calls.** `Roomie` has `set_password` and
+`check_password` built on Werkzeug's `generate_password_hash`. The login route
+uses neither: it compares `user.password` as plaintext, and an unrecognised
+name silently creates an account. That was the right call for a usability
+study, where a login wall means you learn nothing about the actual task, and
+it is the first thing that would have to go before this touched a real
+household. Both paths still exist in the code, which is honestly just
+confusing to read.
+
+**A dead `forms.py`.** The file imports `Course`, `Instructor`, `Student`,
+`Major`, and `Faculty` from `app.main.models`, none of which exist here; the
+models are `House`, `Roomie`, `Chore`, `Supply`, `Issue`. It is a leftover
+scaffold from a different Flask app, it depends on `Flask-WTF` and
+`WTForms-SQLAlchemy` which are not even in `requirements.txt`, and it would
+raise on import. Nothing imports it, so the app runs fine, which is exactly
+why it survived. Every form in the app is hand-written HTML posting to a
+route.
+
+**Multi-household exists in the schema and nowhere else.** `House` has a
+unique join `code`, and every route is parameterised by it, but `/` hard-codes
+a redirect to `apt101` and no UI ever creates or joins a second house. The
+data model can do it; the prototype never earned it.
+
+## Artifacts
+
+<ArtifactList artifacts={frontmatter.artifacts} />

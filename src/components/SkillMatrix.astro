@@ -1,6 +1,6 @@
 ---
 /**
- * SkillMatrix — a real adjacency matrix, not a list of rows with chips beside
+ * SkillMatrix: a real adjacency matrix, not a list of rows with chips beside
  * them. Rows are skills, columns are projects. A filled cell means that
  * project's `stack`, `methods`, or `domains` genuinely include that skill.
  *
@@ -8,14 +8,14 @@
  * evidenced; down a column shows a project's real stack; the density of the
  * grid as a whole is an honest signal of how much of the toolkit has public
  * work behind it. No rating, no percentage, no invented years-of-experience,
- * no claim about how an unevidenced skill was acquired — the empty cells
+ * no claim about how an unevidenced skill was acquired: the empty cells
  * simply stay empty.
  *
  * Fully server-rendered: complete and readable with JS disabled. The only
  * "interactivity" is CSS-only: `group`/`group-hover` traces a row on hover or
  * keyboard focus, and a `:has()` rule traces the matching column. Both are a
  * pure enhancement layered on markup that already reads correctly without
- * them — no JS, no React island.
+ * them, no JS, no React island.
  */
 import { skills } from "../data/profile";
 import { getCollection } from "astro:content";
@@ -28,10 +28,10 @@ const work = await getCollection("work");
  * vocabularies can be compared at all:
  *
  *   1. lowercase
- *   2. drop parenthetical detail — "AWS (EC2, RDS)" keys on "aws"; no
+ *   2. drop parenthetical detail: "AWS (EC2, RDS)" keys on "aws"; no
  *      project's stack tags EC2/RDS separately, so keeping them would just
  *      make "AWS" fail to match its own bracketed self.
- *   3. hand-disambiguate the punctuation-bearing language names — "C",
+ *   3. hand-disambiguate the punctuation-bearing language names: "C",
  *      "C++", "C#", and ".NET" would all collapse to the same key ("c") once
  *      punctuation is stripped, which is wrong even though none of them
  *      happen to match a project today.
@@ -74,7 +74,7 @@ for (const entry of work) {
   }
 }
 
-// The matrix's column order — every project on the site, once.
+// The matrix's column order: every project on the site, once.
 const projects: ProjectRef[] = work.map((entry) => ({ id: entry.id, title: entry.data.title }));
 
 interface SkillEvidence {
@@ -96,10 +96,36 @@ const groups = categories.map(({ key, label }) => ({
   }),
 }));
 
-// A real, computed count — not a percentage, not a rating.
+// A real, computed count, not a percentage, not a rating.
 const allSkills = groups.flatMap((g) => g.skills);
 const evidencedCount = allSkills.filter((s) => s.projectIds.size > 0).length;
 const totalCount = allSkills.length;
+
+/**
+ * Column cross-highlight, generated per project rather than hand-written.
+ *
+ * Row highlighting is plain Tailwind (`group`/`group-hover` on the <tr>), but
+ * there is no CSS primitive for "every cell sharing this cell's column", so it
+ * has to be keyed on column position with `:has()`. That used to be a
+ * hand-written block covering nth-child(2)..(7): a silent ceiling of six
+ * project columns, past which a new project's column simply stopped
+ * highlighting. Deriving the rules from `projects` means the ceiling tracks the
+ * collection instead of a number someone remembered to update.
+ *
+ * Column 1 is the skill label, so project N lives at nth-child(N + 2).
+ */
+const columnHighlightCss = projects
+  .map((_, i) => {
+    const n = i + 2;
+    return [
+      `.skill-matrix:has(tbody td:nth-child(${n}):hover) thead th:nth-child(${n})`,
+      `.skill-matrix:has(tbody td:nth-child(${n}):hover) tbody td:nth-child(${n})`,
+      `.skill-matrix:has(thead th:nth-child(${n}) a:focus-visible) thead th:nth-child(${n})`,
+      `.skill-matrix:has(thead th:nth-child(${n}) a:focus-visible) tbody td:nth-child(${n})`,
+    ].join(",\n");
+  })
+  .map((sel) => `${sel} {\n  background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);\n}`)
+  .join("\n");
 ---
 
 <section id="skills" class="mx-auto w-full max-w-[72rem] px-6 py-24 md:px-10 md:py-32" data-reveal>
@@ -108,7 +134,7 @@ const totalCount = allSkills.length;
     <p class="mt-3 max-w-[46rem] text-small text-muted">
       Rows are skills, columns are the projects on this site. A filled cell
       means that project's stack, methods, or domains genuinely include that
-      skill — cross-referenced from the same frontmatter that drives the case
+      skill, cross-referenced from the same frontmatter that drives the case
       studies, not self-rated. An empty row isn't a claim about how a skill
       was learned; it just means nothing here demonstrates it yet.
     </p>
@@ -119,7 +145,7 @@ const totalCount = allSkills.length;
   </p>
 
   {/* ONE table, not one per category. Three tables meant every project title
-      repeated three times as a column header — the single largest source of
+      repeated three times as a column header: the single largest source of
       visual repetition on the page. Categories are now <tbody> row-groups,
       so the projects are named exactly once. */}
   <div class="skill-matrix-wrap overflow-x-auto" data-reveal>
@@ -213,48 +239,8 @@ const totalCount = allSkills.length;
     width: auto;
   }
 
-  /*
-   * Row cross-highlight is plain Tailwind (`group` / `group-hover` on the
-   * <tr>, above). Column cross-highlight has no Tailwind primitive — nothing
-   * in CSS otherwise expresses "every cell sharing this cell's column" — so
-   * it's keyed on column position with :has(). Headroom to a 7th column
-   * (6 project columns) for future work entries; the unused rules are
-   * harmless no-ops today with only 3 columns.
-   */
-  .skill-matrix:has(tbody td:nth-child(2):hover) thead th:nth-child(2),
-  .skill-matrix:has(tbody td:nth-child(2):hover) tbody td:nth-child(2),
-  .skill-matrix:has(thead th:nth-child(2) a:focus-visible) thead th:nth-child(2),
-  .skill-matrix:has(thead th:nth-child(2) a:focus-visible) tbody td:nth-child(2) {
-    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
-  }
-  .skill-matrix:has(tbody td:nth-child(3):hover) thead th:nth-child(3),
-  .skill-matrix:has(tbody td:nth-child(3):hover) tbody td:nth-child(3),
-  .skill-matrix:has(thead th:nth-child(3) a:focus-visible) thead th:nth-child(3),
-  .skill-matrix:has(thead th:nth-child(3) a:focus-visible) tbody td:nth-child(3) {
-    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
-  }
-  .skill-matrix:has(tbody td:nth-child(4):hover) thead th:nth-child(4),
-  .skill-matrix:has(tbody td:nth-child(4):hover) tbody td:nth-child(4),
-  .skill-matrix:has(thead th:nth-child(4) a:focus-visible) thead th:nth-child(4),
-  .skill-matrix:has(thead th:nth-child(4) a:focus-visible) tbody td:nth-child(4) {
-    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
-  }
-  .skill-matrix:has(tbody td:nth-child(5):hover) thead th:nth-child(5),
-  .skill-matrix:has(tbody td:nth-child(5):hover) tbody td:nth-child(5),
-  .skill-matrix:has(thead th:nth-child(5) a:focus-visible) thead th:nth-child(5),
-  .skill-matrix:has(thead th:nth-child(5) a:focus-visible) tbody td:nth-child(5) {
-    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
-  }
-  .skill-matrix:has(tbody td:nth-child(6):hover) thead th:nth-child(6),
-  .skill-matrix:has(tbody td:nth-child(6):hover) tbody td:nth-child(6),
-  .skill-matrix:has(thead th:nth-child(6) a:focus-visible) thead th:nth-child(6),
-  .skill-matrix:has(thead th:nth-child(6) a:focus-visible) tbody td:nth-child(6) {
-    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
-  }
-  .skill-matrix:has(tbody td:nth-child(7):hover) thead th:nth-child(7),
-  .skill-matrix:has(tbody td:nth-child(7):hover) tbody td:nth-child(7),
-  .skill-matrix:has(thead th:nth-child(7) a:focus-visible) thead th:nth-child(7),
-  .skill-matrix:has(thead th:nth-child(7) a:focus-visible) tbody td:nth-child(7) {
-    background-color: color-mix(in oklab, var(--color-accent) 10%, transparent);
-  }
 </style>
+
+{/* Column cross-highlight: one rule set per project column, generated from
+    `projects` so the ceiling can never fall behind the collection again. */}
+<style is:global set:html={columnHighlightCss}></style>

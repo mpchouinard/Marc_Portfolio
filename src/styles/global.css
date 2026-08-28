@@ -3,13 +3,13 @@
    No client-side math JS ships. */
 @import "katex/dist/katex.min.css";
 
-/* Self-hosted variable fonts — no external request, no render-blocking
+/* Self-hosted variable fonts: no external request, no render-blocking
    third-party origin. Matters for the Lighthouse target. */
 @import "@fontsource-variable/jetbrains-mono";
 @import "@fontsource-variable/inter";
 
 /* ===========================================================================
-   DESIGN TOKENS — LOCKED 2026-08-26. Direction: "Terminal".
+   DESIGN TOKENS, LOCKED 2026-08-26. Direction: "Terminal".
    Wave 1+ agents MUST NOT edit this file. Token changes go through Wave 0.
    =========================================================================== */
 
@@ -33,17 +33,17 @@
   --color-accent-dim: #22C55E;
 
   /* --- bloom: what the glyph field resolves into as you scroll -----------
-     Phosphor family only. Deliberately NO blue/violet — the whole scroll
+     Phosphor family only. Deliberately NO blue/violet: the whole scroll
      transition stays in one hue family so it can never clash with the
      accent, and reads as the terminal's own glow blooming. */
   --color-aurora-1: #08140E;   /* near-black green */
   --color-aurora-2: #0E3320;   /* deep forest */
-  --color-aurora-3: #14532D;   /* moss — the bloom core */
+  --color-aurora-3: #14532D;   /* moss, the bloom core */
   --color-bloom-hot: #86EFAC;  /* light phosphor, for crests and bloom highlights */
 
   /* --- type ------------------------------------------------------------- */
   /* Mono carries the identity: display, nav, labels, metrics, code.
-     Inter is used ONLY for long-form case-study prose — mono at paragraph
+     Inter is used ONLY for long-form case-study prose: mono at paragraph
      length is genuinely hard to read, and these pages are meant to be read.
      To go fully mono, point --font-body at the mono stack. */
   --font-display: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -90,7 +90,7 @@ html {
 }
 
 body {
-  /* Deliberately TRANSPARENT — the ground colour lives on <html> above.
+  /* Deliberately TRANSPARENT: the ground colour lives on <html> above.
      The glyph-field canvas is a negative-z-index child of <body>, and CSS
      paints such children BELOW the backgrounds of in-flow block elements.
      Giving <body> an opaque background therefore buries the field entirely.
@@ -138,7 +138,7 @@ a:hover { text-decoration-color: var(--color-accent); }
   border-radius: 2px;
 }
 
-/* Skip link — keyboard users land here first. */
+/* Skip link: keyboard users land here first. */
 .skip-link {
   position: absolute;
   left: -9999px;
@@ -184,7 +184,7 @@ pre {
 }
 
 /* ===========================================================================
-   REDUCED MOTION — static fallback, not shortened durations (PLAN.md §4)
+   REDUCED MOTION: static fallback, not shortened durations (PLAN.md §4)
    =========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -4,12 +4,12 @@ kind: personal
 period:
   start: 2026-07-14
 status: ongoing
-role: "contributor — ongoing collaboration"
+role: "contributor, ongoing collaboration"
 affiliation: "with Joe DiPietro (WPI)"
 collaborators: ["Joe DiPietro"]
 domains: ["tabular", "automl", "llm-systems"]
 methods: ["tool-use-orchestration", "methodology-registry", "gradient-boosting", "ensembling"]
-stack: ["python", "fastapi", "sqlite", "scikit-learn", "lightgbm", "xgboost", "nextjs", "react", "anthropic-api"]
+stack: ["python", "fastapi", "uvicorn", "sqlite", "sqlalchemy", "pandas", "scikit-learn", "lightgbm", "xgboost", "prophet", "nextjs", "react", "typescript", "tailwind", "anthropic-api"]
 results: []
 artifacts:
   - type: repo
@@ -27,7 +27,7 @@ import ArtifactList from "../../components/ArtifactList.astro";
 Plenty of engineers can write code and stand up infrastructure but stall on the
 ML-specific judgment: how to frame the problem, which methodology suits the data,
 what "good" even looks like for this target. Existing AutoML tools mostly assume
-that framing is already done — you arrive knowing the task type and the target
+that framing is already done. You arrive knowing the task type and the target
 column, and the tool searches hyperparameters from there.
 
 Model Builder targets the step before that. You upload a CSV, describe the goal in
@@ -49,15 +49,15 @@ conversation, then selects and parameterises an entry from a curated methodology
 registry. It never generates training code.
 
 That registry is the guardrail. Rather than an unbounded search space, methodologies
-are declared as YAML specs — twelve of them at the time of writing:
+are declared as YAML specs, twelve of them at the time of writing:
 
-- **Classification** — logistic baseline, random forest, LightGBM, XGBoost
-- **Regression** — linear baseline, random forest, LightGBM, XGBoost
-- **Forecasting** — LightGBM, Prophet
-- **Ensembles** — blending, stacking
+- **Classification:** logistic baseline, random forest, LightGBM, XGBoost
+- **Regression:** linear baseline, random forest, LightGBM, XGBoost
+- **Forecasting:** LightGBM, Prophet
+- **Ensembles:** blending, stacking
 
 Everything downstream is hand-written scikit-learn/LightGBM. The payoff is that
-behaviour stays predictable, debuggable, and explainable — an LLM that emits
+behaviour stays predictable, debuggable, and explainable. An LLM that emits
 training code is very hard to trust; an LLM that picks a known-good recipe and
 justifies the choice is much easier to audit.
 
@@ -68,7 +68,7 @@ results, instead of a bare chat transcript.
 
 Every completed run emits a bundle: the fitted model, a standalone `train.py`
 that reproduces the training end to end, and a FastAPI inference stub. The
-`train.py` is the "glass box" commitment made concrete — the output is inspectable
+`train.py` is the "glass box" commitment made concrete: the output is inspectable
 code you own, not an opaque endpoint.
 
 Later work in the repo adds a trust layer that evaluates results with more
@@ -81,12 +81,12 @@ each other to build ensembles, and in-app deployment behind an API.
 
 {/* TODO(marc): no benchmark numbers are recorded in the repo. If you ran the
     churn or house-prices fixtures, the honest thing to add is a row per
-    (metric, dataset) with the baseline methodology as `baseline` — that is
+    (metric, dataset) with the baseline methodology as `baseline`: that is
     exactly what the registry's logistic/linear baselines exist to provide. */}
 
 ## What didn't work
 
-{/* TODO(marc): the repo's own history hints at real tension worth writing up —
+{/* TODO(marc): the repo's own history hints at real tension worth writing up:
     a "trust layer" was added specifically because training results needed more
     scrutiny before being recommended, and PRODUCT.md notes the UI was drifting
     toward an "overloaded enterprise admin surface" as features accreted. Both

@@ -5,19 +5,19 @@ period:
   start: 2025-11-02
   end: 2025-12-13
 status: complete
-role: "team of 4 — team liaison, top contributor"
+role: "team of 4: team liaison, top contributor"
 affiliation: "WPI CS3733 Software Engineering"
 collaborators: ["Joe DiPietro", "Tristan Moda", "David Zhang"]
 domains: ["web-systems", "databases"]
-methods: ["oauth", "relational-modeling", "agile", "containerization"]
-stack: ["python", "flask", "sqlalchemy", "postgresql", "docker", "aws", "auth0", "bootstrap", "pytest"]
+methods: ["session-auth", "relational-modeling", "agile", "containerization"]
+stack: ["python", "flask", "flask-login", "flask-migrate", "flask-wtf", "flask-mail", "sqlalchemy", "sqlite", "werkzeug", "jinja2", "docker", "aws", "bootstrap", "html", "css"]
 results: []
 artifacts:
   - type: repo
     url: "https://github.com/WPI-CS3733-2025B/team-commitcrew"
     label: "Source on GitHub"
 featured: false
-summary: "Flask portal where faculty post research positions and students apply, with Auth0 login and a Dockerised AWS deployment."
+summary: "Flask portal where faculty post research positions and students apply, with email-confirmed accounts and a Dockerised AWS deployment."
 ---
 
 import ResultsTable from "../../components/ResultsTable.astro";
@@ -26,7 +26,7 @@ import ArtifactList from "../../components/ArtifactList.astro";
 ## Problem
 
 Undergraduate research positions at a university are matched almost entirely
-through informal channels — a professor mentions an opening in a lecture, or a
+through informal channels. A professor mentions an opening in a lecture, or a
 student emails around hoping to catch one. Faculty have no clean way to advertise
 what they need, and students have no way to see what exists or to present the
 coursework that would qualify them.
@@ -38,31 +38,37 @@ programming languages, and interests, and applications carry references.
 ## Data
 
 The interesting part is the relational model, because the matching problem is
-really a modelling problem. Users are polymorphic — `Student` and `Faculty` both
-inherit a shared `User` — and the qualification surface is normalised across
+really a modelling problem. Users are polymorphic: `Student` and `Faculty` both
+inherit a shared `User`, and the qualification surface is normalised across
 `Major`, `Course`, `TakenCourse`, `ProgrammingLang`, and `TopicOfInterest`.
 `Position`, `Application`, and `Reference` carry the workflow itself.
 
-- **Store:** SQLAlchemy models, Flask-Migrate migrations, SQLite locally and PostgreSQL on AWS RDS in production
-- **Scale:** a course project, so the data is seeded rather than organic — no real user volume behind it
+- **Store:** SQLAlchemy models over SQLite, with Flask-Migrate handling schema migrations
+- **Scale:** a course project, so the data is seeded rather than organic, with no real user volume behind it
 
 ## Approach
 
-Flask with blueprint separation — `auth`, `student`, `faculty`, `main`, `errors` —
-so the two user roles stay isolated rather than tangled behind conditionals.
+Flask with blueprint separation (`auth`, `student`, `faculty`, `main`, `errors`)
+keeps the two user roles isolated rather than tangled behind conditionals.
 
-Authentication goes through **Auth0 via OAuth**: the app redirects to Auth0,
-exchanges the token, and keys the local user record on the returned `auth0_sub`
-rather than storing passwords at all. `itsdangerous` handles signed tokens and
-Flask-Mail covers verification flows. Sessions ride on Flask-Login.
+Authentication is session-based: Flask-Login holds the session, and passwords
+are hashed with Werkzeug's `generate_password_hash` rather than stored. Faculty
+accounts additionally require email confirmation before they can post: a
+signed, expiring token generated with `itsdangerous` and delivered by
+Flask-Mail, redeemed at a `/confirm/<token>` route. The gate exists because a
+faculty account is the one that can create positions, so it is the account
+worth verifying.
 
-Deployment is containerised with Docker and runs on AWS EC2 backed by RDS
-PostgreSQL, with HTTPS terminated at the instance and environment-based config
-separating local from production.
+Deployment is containerised with Docker and runs on AWS EC2. The image
+self-signs a TLS certificate with OpenSSL at build time and starts by applying
+migrations (`flask db upgrade`) before serving over HTTPS on port 3001. The
+team's AWS runbook also provisions an RDS PostgreSQL instance, though the
+pinned dependencies ship no PostgreSQL driver. The container as built runs on
+SQLite.
 
 Process was Agile across four people over six weeks, with the team liaison role
-carrying communication with the course staff. 174 commits, of which I authored
-60 — the largest share on the team.
+carrying communication with the course staff, and the largest share of the
+implementation on the merged branch.
 
 ## Experiments
 
@@ -74,11 +80,33 @@ carrying communication with the course staff. 174 commits, of which I authored
 
 ## What didn't work
 
-{/* TODO(marc): real candidates from the repo — the test suite is 3 tests in
-    tests/test_routes.py written near the end (commits "began writing tests" and
-    "added two tests" are the last two on the branch), which is worth being
-    honest about; and the AWS deployment has since gone down. What bit you
-    during the Auth0 integration or the EC2/RDS setup? */}
+**`pytest` is pinned and the suite is empty.** `requirements.txt` carries
+`pytest==8.4.2` and there is a `tests/` package, but it contains nothing except
+an empty `__init__.py`: no tests at all. On a six-week course
+project with a fixed demo date, testing was the thing that kept losing to
+features, and the dependency was added in anticipation of a suite that never
+got written. Naming it here is more useful than quietly leaving the dependency
+to imply coverage that does not exist.
+
+**Auth0 was specified and never built.** The requirements document offers SSO
+through Auth0 as an alternative to email-and-password login. No Auth0 SDK, no
+OAuth flow, and no token handling ever landed. What shipped is the Flask-Login
+and Werkzeug path described above. The spec was written optimistically at the
+start of the term and never revised once the scope became clear.
+
+**The PostgreSQL story is a runbook, not a build.** The AWS guide walks through
+provisioning RDS PostgreSQL, but no driver was ever added to the image, so the
+deployed container ran the same SQLite file the laptops did. The gap went
+unnoticed because nothing in the demo needed the data to survive a redeploy.
+
+**The graded deployment is gone.** The EC2 instance backing the demo no longer
+answers, which is the ordinary fate of a free-tier box after a term ends, but
+it does mean the only remaining evidence is the source.
+
+{/* TODO(marc): the hardcoded SECRET_KEY and Gmail app password in
+    app/__init__.py are the strongest item in this section, but do NOT publish
+    it until that credential is rotated, since it would point readers straight
+    at a live secret. Once rotated, add it back here. */}
 
 ## Artifacts
 
@@ -86,5 +114,5 @@ carrying communication with the course staff. 174 commits, of which I authored
 
 {/* NOTE: the graded deployment at ec2-3-16-148-127.us-east-2.compute.amazonaws.com
     is no longer reachable (connection times out), so it is deliberately NOT
-    listed as an artifact — a dead link on a portfolio is worse than no link.
+    listed as an artifact: a dead link on a portfolio is worse than no link.
     If you redeploy it, add it back as type: demo. */}

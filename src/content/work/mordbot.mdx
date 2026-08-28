@@ -1,0 +1,125 @@
+---
+title: "MordBot"
+kind: personal
+period:
+  start: 2026-06-25
+status: ongoing
+role: "contributor: agent tooling and conversational layer"
+collaborators: ["Mordecai Yiadom", "Joe DiPietro"]
+domains: ["speech", "audio", "llm-systems"]
+methods: ["asr", "voice-activity-detection", "tool-use-orchestration", "text-to-speech", "wake-word-gating"]
+stack: ["python", "pytorch", "huggingface", "discord-py", "pydantic-ai", "webrtcvad", "onnx", "numpy", "scipy", "yt-dlp", "ffmpeg"]
+results: []
+artifacts:
+  - type: repo
+    url: "https://github.com/Mordecai-Yiadom/MordBot"
+    label: "Source on GitHub"
+featured: false
+summary: "Discord voice assistant that segments speech with VAD, transcribes it with a streaming Nemotron ASR model, and answers out loud, entirely on local inference."
+---
+
+import ResultsTable from "../../components/ResultsTable.astro";
+import ArtifactList from "../../components/ArtifactList.astro";
+
+## Problem
+
+Discord bots are deaf. They are driven by slash commands typed into a text
+channel, which is a strange interface for a platform where people spend hours
+in a voice call. If six people are in a call and someone wants a song changed,
+the interaction should be saying so out loud, not alt-tabbing to type
+`/skip`.
+
+The goal was a bot that sits in the call, listens, and answers in the same
+channel it was asked in. A three-person project, built with Mordecai Yiadom
+and Joe DiPietro.
+
+## Data
+
+No dataset. The input is a live call. Discord delivers decoded **48 kHz
+stereo PCM per speaker, 20 ms at a time**, which is Opus's native frame size,
+and that frame cadence sets the shape of everything downstream.
+
+The hard part is that a voice channel has no turn structure. Nothing marks
+where one person's sentence starts or ends, several people can talk at once,
+and most of the audio is silence or breathing.
+
+## Approach
+
+The pipeline is four stages, each chosen around the 20 ms frame:
+
+**Segment.** Every 20 ms frame is downmixed to mono and passed through
+**WebRTC VAD**. Consecutive speech frames accumulate into an utterance, which
+closes on enough trailing silence or a maximum duration. Boundaries come from
+the audio itself rather than a fixed window, so a short answer and a long
+rambling one both survive intact.
+
+**Transcribe.** Each closed utterance goes to
+`nvidia/nemotron-speech-streaming-en-0.6b`, loaded through Hugging Face
+`transformers` as an `AutoModelForRNNT`. Transcription runs on a background
+thread: a 0.6B RNN-Transducer forward pass on the event loop would stall
+Discord's heartbeat and drop the connection.
+
+**Decide.** Transcripts are gated on a wake phrase; the *next* utterance from
+that speaker is treated as the command. Commands go to a **Pydantic-AI**
+`Agent` whose model is an `OpenAIChatModel` pointed at a **local LM Studio
+server** over its OpenAI-compatible API. Nothing leaves the machine. The agent
+holds real tools (play a track, skip, pause, search the web through DuckDuckGo,
+fetch a gif), so "play something else" resolves to a tool call rather than a
+sentence about playing something else.
+
+**Speak.** Replies are synthesized with **Kokoro** as a local ONNX model and
+played back through a per-guild speaker. That indirection exists because a
+discord.py voice client can only play one source at a time, so speech and music
+have to be arbitrated rather than both handed to the client.
+
+Music playback is `yt-dlp` into FFmpeg, per guild.
+
+My work was on the agent side: the tool surface the model calls into, and the
+conversational layer that decides how it responds.
+
+## Experiments
+
+<ResultsTable results={frontmatter.results} />
+
+No formal evaluation: there is no held-out set for "did it hear me correctly in
+a noisy call," and word-error numbers copied from Nemotron's model card would
+describe NVIDIA's benchmarks, not this pipeline's behaviour on Discord audio.
+
+## What didn't work
+
+**True cache-aware streaming was tried and abandoned.** Nemotron supports
+frame-by-frame streaming with partial transcripts while someone is still
+talking, which would be the obvious way to build this. That low-level API
+(`conformer_stream_step()` with manually carried encoder cache state) lives
+only in NVIDIA's NeMo toolkit, not in `transformers`, and the chunk/cache
+bookkeeping is unforgiving: get it slightly wrong and you get garbled text
+full of boundary artifacts. Since the bot only needs to catch a wake word and
+one command sentence rather than render live captions, VAD segmentation plus
+one-shot transcription on the stable `transformers` API was the better trade.
+Live captions would justify going back.
+
+**Discord's E2EE rollout silently broke audio receive.** discord.py 2.7+
+negotiates DAVE and end-to-end-encrypts what the bot sends, but
+`discord-ext-voice-recv` at the pinned version only strips *transport*
+encryption on receive, so incoming frames were still E2EE-wrapped and arrived
+as garbage at the Opus decoder. The failure looked like a broken model, not a
+broken transport, which cost real debugging time. The fix is a shim around the
+reader's RTP decryptor that additionally runs each payload through discord.py's
+own `DaveSession`, with unmapped senders raising so the reader drops just that
+packet. It is a monkeypatch against a library internal and it is marked in the
+source to be deleted the moment voice-recv supports DAVE natively.
+
+**A dependency that no longer exists.** Most Discord audio examples online
+resample with the stdlib `audioop` module, which was removed in Python 3.13.
+The resampling path is numpy and `scipy.signal.resample_poly` instead, not
+because it is better, but because the ecosystem's copy-paste answer is dead.
+
+**The model choice was forced by access, not quality.** The newer multilingual
+Nemotron would be the stronger pick, but its Hugging Face access was gated and
+ungated repeatedly during rollout, so the English-only predecessor is pinned as
+the default. Both share the same `transformers` API, so it is a one-line change
+if access stabilises.
+
+## Artifacts
+
+<ArtifactList artifacts={frontmatter.artifacts} />

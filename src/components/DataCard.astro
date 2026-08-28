@@ -1,6 +1,6 @@
 ---
 /**
- * DataCard — a small bordered card for a case study's Data section:
+ * DataCard: a small bordered card for a case study's Data section:
  * source / size / splits / known biases. Owned by Wave 1 agent B.
  *
  * The three seed MDX files currently write this section as prose bullets
@@ -8,9 +8,9 @@
  * `data` object), so nothing in `src/content/work/*.mdx` calls this today.
  * It's built and exported so a future case study can `import DataCard from
  * "../../components/DataCard.astro"` directly in its .mdx and pass real
- * values — never invent placeholder copy to justify using it here.
+ * values, never invent placeholder copy to justify using it here.
  *
- * Any field left out is simply omitted from the card, not shown as "—".
+ * Any field left out is simply omitted from the card, not shown as a placeholder dash.
  */
 export interface Props {
   source?: string;

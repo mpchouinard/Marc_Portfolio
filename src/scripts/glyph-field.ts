@@ -1,5 +1,5 @@
 /**
- * The glyph field — the site's signature background.
+ * The glyph field: the site's signature background.
  *
  * NOT Matrix rain. Every cell in a monospace grid renders a mathematical
  * character whose BRIGHTNESS is driven by a real scalar field sampled over
@@ -127,7 +127,7 @@ function buildPalette(): Palette {
   // The ramp is now three segments instead of two, and the accent band
   // starts much earlier, so a far larger share of the field carries colour
   // rather than sitting in the grey-green floor.
-  const mutedAt = 0.42; // was 0.62 — accent now begins far sooner
+  const mutedAt = 0.42; // was 0.62, accent now begins far sooner
   const hotAt = 0.86; // top of the ramp blooms past accent into bloom-hot
 
   for (let i = 0; i < size; i++) {
@@ -231,7 +231,7 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
   let startTime = performance.now();
   // Physics coupling: raw scroll velocity is fed in from Lenis, but the
   // field reacts to a DAMPED copy of it. The damping is what makes it read
-  // as mass — the field keeps drifting briefly after the scroll stops and
+  // as mass: the field keeps drifting briefly after the scroll stops and
   // eases in rather than snapping to each new velocity.
   let velocityTarget = 0;
   let velocityDamped = 0;
@@ -270,7 +270,7 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
     ctx!.textAlign = "center";
     ctx!.textBaseline = "middle";
 
-    // Sparse, slow glyph identity churn — independent of the brightness
+    // Sparse, slow glyph identity churn, independent of the brightness
     // field, which updates every frame. Only a small fraction of cells
     // re-roll per frame, so the field reads as "thinking," not raining.
     const cellCount = cols * rows;
@@ -338,7 +338,7 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
   }
 
   function renderStaticFrame(): void {
-    // A single, fixed frame — never a shortened animation. Pick a
+    // A single, fixed frame: never a shortened animation. Pick a
     // non-trivial t so the static field looks intentional, not flat.
     drawFrame(6.283);
   }

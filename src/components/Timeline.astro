@@ -1,11 +1,11 @@
 ---
 /**
- * Timeline — every `work` entry on one chronological spine, kinds
+ * Timeline: every `work` entry on one chronological spine, kinds
  * interleaved. This is "the container made visible": research, coursework,
  * personal, and industry work share one line rather than sitting in three
  * disconnected lists.
  *
- * Kinds are told apart by weight / case / border treatment only — the
+ * Kinds are told apart by weight / case / border treatment only: the
  * palette has exactly one accent color (PLAN.md §6), reserved here for the
  * "ongoing" marker rather than for telling kinds apart.
  */
@@ -17,7 +17,7 @@ interface Props {
 
 const { entries } = Astro.props;
 
-// Oldest to newest — the timeline reads as a trajectory, ending at "ongoing".
+// Oldest to newest: the timeline reads as a trajectory, ending at "ongoing".
 const sorted = [...entries].sort(
   (a, b) => a.data.period.start.valueOf() - b.data.period.start.valueOf(),
 );

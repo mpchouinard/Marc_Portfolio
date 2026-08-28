@@ -1,11 +1,11 @@
 ---
 /**
- * /work/ — the browse page. Composes:
- *   1. The full chronological Timeline — SSR, works with JS off.
+ * /work/: the browse page. Composes:
+ *   1. The full chronological Timeline: SSR, works with JS off.
  *   2. FacetBrowser, a React island hydrated `client:visible` that lets a
  *      visitor filter the same data by domain / method / year.
  *
- * There used to be a third listing here too — a featured strip (ProjectCard
+ * There used to be a third listing here too, a featured strip (ProjectCard
  * grid) above the Timeline. It was cut: the Timeline already lists every
  * entry chronologically and FacetBrowser already filters every entry, so a
  * featured subset above both was a third listing of the same projects for no
@@ -60,7 +60,7 @@ const yearOptions = [...new Set(facetEntries.map((e) => e.year))].sort((a, b) =>
     <h1 class="text-display">Work</h1>
     <p class="mt-3 max-w-prose text-lede text-muted">
       Research, coursework, and independent projects share one timeline here rather than three
-      separate lists — the point is the trajectory, not the category.
+      separate lists. The trajectory is the point, not the category.
     </p>
   </header>
 
