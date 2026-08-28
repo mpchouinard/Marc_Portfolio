@@ -143,20 +143,108 @@ h1, h2, h3 {
   text-wrap: balance;
 }
 
-/* The hero name is the single exception to the mono rule above.
-   It is declared here rather than as a utility class on the element because
+/* ===========================================================================
+   HERO NAME: "phosphor burn"
+   ---------------------------------------------------------------------------
+   The single exception to the mono rule above, and the only place on the site
+   that gets a bespoke type treatment.
+
+   It is declared here rather than as utility classes on the element because
    the `h1 { font-family: var(--font-mono) }` rule above is UNLAYERED, and
    unlayered CSS beats anything Tailwind emits into @layer utilities. A
    `font-display` class on the element silently loses; this does not.
-   `text-wrap: nowrap` is needed to override the `balance` set above: together
-   with the width-derived --text-hero, it keeps the name on exactly one line
-   at every viewport size. */
+   `text-wrap: nowrap` overrides the `balance` set above: with the
+   width-derived --text-hero it keeps the name on one line at every size.
+
+   Three stacked layers, all built from the same string via attr(data-text):
+
+     ::after   an offset outline in the hottest phosphor, low alpha. Reads as
+               CRT misregistration rather than a drop shadow.
+     ::before  a phosphor gradient clipped to the glyph shapes, held under 1
+               alpha so the glyph field still shows through the letters.
+     h1        transparent fill with a crisp accent outline on top, plus two
+               drop-shadows for the bloom.
+
+   The result is hollow, outlined, colour-graded letterforms that the
+   background field reads through. Phosphor family only: no second hue, per
+   the locked direction.
+
+   ROBUSTNESS: the base rule paints a solid, readable name on first paint.
+   Everything decorative sits behind an @supports gate, so a browser without
+   text-stroke or background-clip:text shows plain bright text rather than
+   nothing. The name is never invisible and never waits on JS.
+   =========================================================================== */
 #hero h1 {
   font-family: var(--font-display);
   font-variant-ligatures: normal;
   letter-spacing: -0.03em;
   text-wrap: nowrap;
   white-space: nowrap;
+  color: var(--color-bright);
+}
+
+/* Animatable custom property for the gradient sweep. Registering it is what
+   lets a percentage interpolate; an unregistered var would jump, not glide. */
+@property --hero-sheen {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
+@keyframes hero-sheen-drift {
+  from { --hero-sheen: 0%; }
+  to   { --hero-sheen: 200%; }
+}
+
+@supports (-webkit-text-stroke: 1px currentColor) and
+          ((background-clip: text) or (-webkit-background-clip: text)) {
+  #hero h1 {
+    position: relative;
+    isolation: isolate;
+    color: transparent;
+    -webkit-text-stroke: clamp(1.5px, 0.022em, 4px) var(--color-accent);
+    filter:
+      drop-shadow(0 0 0.045em color-mix(in oklab, var(--color-accent) 65%, transparent))
+      drop-shadow(0 0 0.26em color-mix(in oklab, var(--color-accent-dim) 45%, transparent));
+    animation: hero-sheen-drift 16s linear infinite;
+  }
+
+  #hero h1::before,
+  #hero h1::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* colour layer, under the outline */
+  #hero h1::before {
+    z-index: -1;
+    color: transparent;
+    -webkit-text-stroke: 0;
+    background-image: linear-gradient(
+      100deg,
+      var(--color-aurora-3) 0%,
+      var(--color-accent-dim) 26%,
+      var(--color-bloom-hot) 48%,
+      var(--color-accent) 70%,
+      var(--color-aurora-3) 100%
+    );
+    background-size: 220% 100%;
+    background-position: var(--hero-sheen) 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    opacity: 0.8;
+  }
+
+  /* chromatic echo, furthest back */
+  #hero h1::after {
+    z-index: -2;
+    color: transparent;
+    -webkit-text-stroke: clamp(1px, 0.014em, 3px)
+      color-mix(in oklab, var(--color-bloom-hot) 55%, transparent);
+    transform: translate(0.022em, -0.022em);
+  }
 }
 
 a {

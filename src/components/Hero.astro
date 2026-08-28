@@ -49,7 +49,10 @@ import { profile } from "../data/profile";
     </div>
 
     <div class="relative z-10 flex flex-col items-center px-6 text-center">
-      <h1 class="text-hero text-bright">
+      {/* data-text feeds the two decorative layers in global.css. They are
+          built from attr(data-text) rather than duplicated markup so the
+          accessibility tree and the page text stay a single string. */}
+      <h1 class="text-hero text-bright" data-text={profile.name}>
         {profile.name}
       </h1>
       <p class="mt-6 max-w-2xl text-lede text-muted">
