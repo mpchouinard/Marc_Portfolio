@@ -175,7 +175,7 @@ const nowLeft = pct(nowIdx);
                 <div class="relative h-2" aria-hidden="true">
                   <span
                     class:list={[
-                      "absolute top-0 block h-2",
+                      "trajectory-bar absolute top-0 block h-2",
                       lane.ongoing ? "bg-accent-dim" : "bg-rule",
                       "transition-[filter] duration-200 group-hover/lane:brightness-150",
                     ]}
@@ -224,3 +224,41 @@ const nowLeft = pct(nowIdx);
   </div>
 
 </section>
+
+<style>
+  /*
+    The run bars draw themselves along the time axis as the spine scrolls in,
+    left to right, which is the direction the axis is read. They are the one
+    element on the page whose length already encodes a real quantity (months
+    of a degree or a role), so animating that length is the geometry telling
+    its own story rather than decoration laid on top.
+
+    scaleX is used rather than animating `width` because the bars are absolutely
+    positioned with a percentage width: scaling composites, width would force a
+    layout pass on every one of them for every scroll frame.
+
+    Gated on @supports and js-reveal like every other scroll-driven piece, so
+    browsers without the feature and reduced-motion readers get full-length
+    bars immediately.
+  */
+  .trajectory-bar {
+    transform-origin: left center;
+  }
+
+  @supports (animation-timeline: view()) {
+    :global(html.js-reveal) .trajectory-bar {
+      animation: trajectory-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 25% cover 35%;
+    }
+  }
+
+  @keyframes trajectory-draw {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+</style>

@@ -13,6 +13,7 @@ import Base from "../../layouts/Base.astro";
 import MetaBar from "../../components/MetaBar.astro";
 import ProjectArt from "../../components/ProjectArt.astro";
 import MathRule from "../../components/MathRule.astro";
+import LissajousMark from "../../components/LissajousMark.astro";
 import { Image } from "astro:assets";
 
 export async function getStaticPaths() {
@@ -100,6 +101,20 @@ const d = entry.data;
         [&_.katex-display]:my-6"
     >
       <Content />
+    </div>
+
+    {/* Closing mark. The a:b ratio is derived from the project's own taxonomy
+        counts, so each case study ends on a figure that is genuinely its own:
+        more methods knot the curve more, more domains raise its symmetry. It
+        is decorative and carries no information a reader needs. */}
+    <div class="mt-20 flex justify-center" aria-hidden="true">
+      <LissajousMark
+        a={2 + (d.methods.length % 4)}
+        b={3 + (d.domains.length % 4)}
+        delta={(d.stack.length % 7) * 0.4}
+        size={160}
+        class="opacity-70"
+      />
     </div>
   </article>
 </Base>
