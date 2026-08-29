@@ -1,15 +1,37 @@
 ---
 /**
- * Timeline: every `work` entry on one chronological spine, kinds
- * interleaved. This is "the container made visible": research, coursework,
- * personal and industry work share one line rather than sitting in three
- * disconnected lists.
+ * Timeline: every `work` entry on one chronological spine, kinds interleaved.
+ * This is "the container made visible": research, coursework, personal and
+ * industry work share one line rather than sitting in three disconnected
+ * lists.
  *
- * Kinds are told apart by weight / case / border treatment only: the
- * palette has exactly one accent color (PLAN.md §6), reserved here for the
+ * Presentation is a STICKY STACK. Each entry is `position: sticky` at a top
+ * offset a little lower than the one before it, so scrolling deals the
+ * projects into a pile: the card you are reading holds the viewport while the
+ * next one slides up over it, and the ones already read stay visible as a row
+ * of stacked edges above. The offsets are what make the pile legible; without
+ * the per-item step every card would land in exactly the same place and the
+ * stack would read as a single card that keeps changing.
+ *
+ * Why this and not the old flat list: /work is where someone decides whether
+ * to click into a case study, and the flat version showed no cover art at all,
+ * so every project looked identical. The stack gives each entry a full card
+ * with its real image and enough room to be judged.
+ *
+ * Kinds are still told apart by weight / case / border treatment only: the
+ * palette has exactly one accent colour (PLAN.md section 6), reserved for the
  * "ongoing" marker rather than for telling kinds apart.
+ *
+ * Accessibility and no-JS: this is an ordered list of links, fully rendered
+ * server-side. Sticky is pure CSS, so the stack works with JS disabled. No
+ * `data-reveal` on the sticky items on purpose: the reveal engine animates
+ * `transform`, and a transform on a sticky element makes it a containing
+ * block, which fights the stacking. The section heading above it still
+ * reveals normally.
  */
 import type { CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
+import ProjectArt from "./ProjectArt.astro";
 
 interface Props {
   entries: CollectionEntry<"work">[];
@@ -28,13 +50,13 @@ function formatMonthYear(date: Date) {
 
 type Kind = CollectionEntry<"work">["data"]["kind"];
 
-// Four kinds, one accent color: differentiated by weight, case and border
+// Four kinds, one accent colour: differentiated by weight, case and border
 // treatment rather than by inventing new hues.
 const KIND_META: Record<Kind, { label: string; class: string }> = {
-  research: { label: "Research", class: "font-bold uppercase tracking-widest" },
+  research: { label: "Research", class: "font-bold uppercase tracking-widest text-text" },
   industry: {
     label: "Industry",
-    class: "border border-rule px-1.5 py-0.5 font-bold uppercase tracking-widest",
+    class: "border border-rule px-1.5 py-0.5 font-bold uppercase tracking-widest text-text",
   },
   coursework: {
     label: "Coursework",
@@ -46,40 +68,154 @@ const KIND_META: Record<Kind, { label: string; class: string }> = {
 
 {
   sorted.length > 0 && (
-    <ol class="relative ml-1 border-l border-rule" data-reveal-group>
-      {sorted.map((entry) => {
+    <ol class="project-stack">
+      {sorted.map((entry, i) => {
         const d = entry.data;
         const ongoing = !d.period.end;
         const meta = KIND_META[d.kind];
+        const chips = [...d.domains.slice(0, 3), ...d.methods.slice(0, 2)];
         return (
-          <li class="relative py-8 pl-7 last:pb-0 sm:pl-9" data-reveal>
-            <span
-              aria-hidden="true"
-              class:list={[
-                "absolute left-0 top-9 h-2.5 w-2.5 -translate-x-1/2 rounded-full border",
-                ongoing ? "border-accent bg-accent" : "border-faint bg-ground",
-              ]}
-            />
+          <li class="project-stack__item" style={`--i:${i}`}>
+            <a
+              href={`/work/${entry.id}/`}
+              class="project-card group block border border-rule bg-raised p-5 transition-colors duration-200 ease-out-expo hover:border-accent-dim focus-visible:border-accent md:p-7"
+            >
+              <div class="grid gap-5 md:grid-cols-[minmax(0,20rem)_1fr] md:gap-7">
+                <div class="project-card__media relative overflow-hidden border border-rule">
+                  {d.cover ? (
+                    <Image
+                      src={d.cover}
+                      alt=""
+                      widths={[400, 800]}
+                      sizes="(min-width: 768px) 20rem, 92vw"
+                      class="aspect-[16/9] w-full object-cover transition-transform duration-500 ease-settle group-hover:scale-[1.03]"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <ProjectArt
+                      id={entry.id}
+                      domains={d.domains}
+                      methods={d.methods}
+                      stack={d.stack}
+                      class="aspect-[16/9] w-full transition-transform duration-500 ease-settle group-hover:scale-[1.03]"
+                    />
+                  )}
+                </div>
 
-            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-micro text-muted">
-              <span class={meta.class}>{meta.label}</span>
-              <time class="text-muted">
-                {formatMonthYear(d.period.start)}
-                {" – "}
-                {ongoing ? <span class="font-bold text-accent">ongoing</span> : formatMonthYear(d.period.end as Date)}
-              </time>
-            </div>
+                <div class="flex min-w-0 flex-col">
+                  <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-micro text-muted">
+                    <span aria-hidden="true" class="text-faint">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span class={meta.class}>{meta.label}</span>
+                    <time>
+                      {formatMonthYear(d.period.start)}
+                      {" – "}
+                      {ongoing ? (
+                        <span class="font-bold text-accent">ongoing</span>
+                      ) : (
+                        formatMonthYear(d.period.end as Date)
+                      )}
+                    </time>
+                    {ongoing && (
+                      <span
+                        aria-hidden="true"
+                        class="inline-block h-1.5 w-1.5 rounded-full bg-accent"
+                      />
+                    )}
+                  </div>
 
-            <h3 class="mt-1.5 break-words text-lede">
-              <a href={`/work/${entry.id}/`} class="hover:text-accent focus-visible:text-accent">
-                {d.title}
-              </a>
-            </h3>
+                  <h3 class="mt-2 break-words text-title transition-colors duration-200 ease-out-expo group-hover:text-accent">
+                    {d.title}
+                  </h3>
 
-            <p class="mt-1 max-w-prose break-words text-small text-text">{d.summary}</p>
+                  <p class="mt-2 max-w-prose break-words text-small text-text">{d.summary}</p>
+
+                  {chips.length > 0 && (
+                    <ul class="mt-4 flex flex-wrap gap-2">
+                      {chips.map((tag) => (
+                        <li class="border border-rule px-2 py-0.5 font-mono text-micro text-muted">
+                          {tag}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <span
+                    aria-hidden="true"
+                    class="mt-auto pt-5 font-mono text-micro uppercase tracking-[0.2em] text-faint transition-colors duration-200 ease-out-expo group-hover:text-accent"
+                  >
+                    Read case study →
+                  </span>
+                </div>
+              </div>
+            </a>
           </li>
         );
       })}
     </ol>
   )
 }
+
+<style>
+  /*
+    --stack-top clears the fixed nav so a stuck card never hides under it.
+    --stack-step is how far each successive card is offset, which is what
+    leaves a visible edge of every previously-read card above the current one.
+    With seven entries the deepest card sits 6 steps down, so the whole pile
+    stays well inside the viewport.
+  */
+  .project-stack {
+    --stack-top: 5rem;
+    --stack-step: 0.6rem;
+    /* Deliberately a plain block flow rather than flex with `gap`. A flex
+       container makes each card a flex item whose containing block is the
+       flex box, which is a sharper edge case for sticky than normal flow and
+       buys nothing here. Spacing comes from margin instead. */
+    display: block;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .project-stack__item {
+    position: sticky;
+    top: calc(var(--stack-top) + (var(--i) * var(--stack-step)));
+  }
+
+  .project-stack__item + .project-stack__item {
+    margin-top: 1.25rem;
+  }
+
+  /*
+    The card must be fully opaque. A translucent card would let the previous
+    card in the pile show through it, which reads as a rendering bug rather
+    than as depth. bg-raised on the anchor supplies the fill; this adds the
+    cast shadow that separates one card from the one it is covering.
+  */
+  .project-card {
+    box-shadow: 0 -1px 0 0 var(--color-rule), 0 -18px 40px -24px rgb(0 0 0 / 0.9);
+  }
+
+  .project-card__media {
+    background-color: var(--color-sunken);
+  }
+
+  /*
+    Reduced motion: keep the stack, drop the scroll-coupled behaviour. Sticky
+    itself is not an animation, but a pile that reassembles under the reader
+    is motion they did not ask for, so the cards simply flow normally. The
+    hover scale on the cover is also removed rather than shortened.
+  */
+  @media (prefers-reduced-motion: reduce) {
+    .project-stack__item {
+      position: static;
+    }
+    .project-card__media :global(img),
+    .project-card__media :global(svg) {
+      transition: none;
+      transform: none !important;
+    }
+  }
+</style>

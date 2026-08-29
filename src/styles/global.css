@@ -143,6 +143,19 @@ h1, h2, h3 {
   text-wrap: balance;
 }
 
+/* The document-level glyph field (Base.astro). Hero.astro scrubs --glyph-blur
+   from 0 as the hero scrolls, so the field softens behind the content instead
+   of being crossfaded out. The slight scale-up hides the soft, semi
+   transparent edge a blur leaves at the viewport boundary; without it the
+   frame visibly darkens as the blur comes up. Declared here rather than in
+   Hero's scoped style block because the element lives outside Hero's DOM. */
+#glyph-field-layer {
+  --glyph-blur: 0px;
+  filter: blur(var(--glyph-blur));
+  transform: scale(1.05);
+  will-change: filter;
+}
+
 /* ===========================================================================
    HERO NAME: "phosphor burn"
    ---------------------------------------------------------------------------
