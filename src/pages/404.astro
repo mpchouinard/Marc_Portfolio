@@ -1,0 +1,53 @@
+---
+/**
+ * 404. Cloudflare Pages serves /404.html automatically for any unmatched
+ * path on a static project, so this file is the whole configuration needed.
+ *
+ * It keeps the site's chrome and its geometry rather than dropping the reader
+ * onto a bare host error page. The figure is a 5:4 Lissajous: an open ratio
+ * that never quite closes on itself, which is a quiet joke about the address
+ * not resolving, and is also just the same curve family the rest of the site
+ * is drawn from.
+ *
+ * Nothing here is dynamic and nothing is invented: the only links offered are
+ * two that certainly exist.
+ */
+import Base from "../layouts/Base.astro";
+import LissajousMark from "../components/LissajousMark.astro";
+import { profile } from "../data/profile";
+---
+
+<Base
+  title="Not found"
+  description="That page does not exist on this site."
+>
+  <section class="flex min-h-[60vh] flex-col items-start justify-center gap-8" data-reveal-group>
+    <div class="flex flex-col items-start gap-3" data-reveal>
+      <p class="font-mono text-micro uppercase tracking-[0.2em] text-faint">Error 404</p>
+      <h1 class="text-display text-bright">No such page</h1>
+      <p class="max-w-prose text-lede text-muted">
+        That address does not resolve to anything on this site. It may have
+        moved, or it may never have existed.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-x-8 gap-y-3 font-mono text-small uppercase tracking-wide" data-reveal>
+      <a href="/" class="text-accent transition-colors hover:text-bloom-hot">
+        Home
+      </a>
+      <a href="/work/" class="text-accent transition-colors hover:text-bloom-hot">
+        All work
+      </a>
+      <a
+        href={`mailto:${profile.email}`}
+        class="text-muted transition-colors hover:text-accent"
+      >
+        {profile.email}
+      </a>
+    </div>
+
+    <div class="mt-4 self-center opacity-70" aria-hidden="true" data-reveal>
+      <LissajousMark a={5} b={4} delta={0.6} size={220} />
+    </div>
+  </section>
+</Base>
