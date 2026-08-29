@@ -193,8 +193,28 @@ import { profile } from "../data/profile";
       else enableMotion();
     });
 
+    // Everything the hero drives is only worth paying for while the hero is
+    // actually on screen: the compositor hint on the full-viewport field
+    // layer, and the name's infinite gradient sweep. Both used to run for
+    // the life of the page, repainting behind content nobody was looking at.
+    const heroName = heroSection.querySelector("h1");
+    const heroVisibility = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((e) => e.isIntersecting);
+        fieldLayer.classList.toggle("is-hero-active", visible);
+        if (heroName) {
+          if (visible) heroName.removeAttribute("data-offscreen");
+          else heroName.setAttribute("data-offscreen", "");
+        }
+      },
+      { rootMargin: "10% 0px" },
+    );
+    heroVisibility.observe(heroSection);
+
     const teardown = () => {
       disableMotion();
+      heroVisibility.disconnect();
+      fieldLayer.classList.remove("is-hero-active");
       unsubscribeReducedMotion();
       window.removeEventListener("astro:before-swap", teardown);
     };

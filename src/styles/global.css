@@ -153,6 +153,13 @@ h1, h2, h3 {
   --glyph-blur: 0px;
   filter: blur(var(--glyph-blur));
   transform: scale(1.05);
+}
+
+/* `will-change: filter` promotes a viewport-sized compositor layer and holds
+   it for the life of the page. The blur only ever changes while the hero is
+   on screen, so the hint is applied only for that window (Hero.astro toggles
+   the class) rather than being paid for the whole way down the page. */
+#glyph-field-layer.is-hero-active {
   will-change: filter;
 }
 
@@ -220,6 +227,13 @@ h1, h2, h3 {
       drop-shadow(0 0 0.045em color-mix(in oklab, var(--color-accent) 65%, transparent))
       drop-shadow(0 0 0.26em color-mix(in oklab, var(--color-accent-dim) 45%, transparent));
     animation: hero-sheen-drift 16s linear infinite;
+  }
+
+  /* An infinite animation on an element carrying two drop-shadows keeps
+     repainting even after the hero has scrolled away, where nobody can see
+     it. Hero.astro sets this attribute once the hero leaves the viewport. */
+  #hero h1[data-offscreen] {
+    animation-play-state: paused;
   }
 
   #hero h1::before,
