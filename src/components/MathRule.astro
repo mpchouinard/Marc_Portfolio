@@ -1,0 +1,142 @@
+---
+/**
+ * MathRule: a section divider that is an actual plotted function rather than
+ * a border.
+ *
+ * The curve is a sum of sinusoids from the same family as the glyph field
+ * (`src/scripts/glyph-field.ts`) and ProjectArt's iso-lines, so the site's
+ * three pieces of generative geometry are all the same idea sampled
+ * differently: animated per frame on a canvas, sampled once as contours, and
+ * here traced as a single line.
+ *
+ * SEAMLESS TILING is the reason the harmonic numbers are integers. With
+ * `n` whole periods across the tile width, y(0) === y(W) and the tile can be
+ * repeated end to end with no visible seam. The path is emitted over TWO tile
+ * widths and the group is translated by exactly one tile, so the loop is
+ * invisible: the second copy has already taken the first one's place when the
+ * transform wraps.
+ *
+ * MOTION: the drift is scrubbed by `animation-timeline: scroll()`, not run on
+ * a timer. The wave advances as the page moves and stops when the reader
+ * stops, which matches the field's scroll-velocity coupling and, unlike an
+ * infinite animation, costs nothing while idle. Browsers without scroll-driven
+ * animations get the static curve, as do reduced-motion users; both are a
+ * complete design rather than a degraded one.
+ *
+ * Everything is computed at build time. No Math.random, no Date, so the markup
+ * is byte-identical across builds.
+ */
+interface Props {
+  /** Vertical room for the curve. The amplitude derives from this. */
+  height?: number;
+  /** Shifts every harmonic so two rules on one page are not identical. */
+  seed?: number;
+  class?: string;
+  label?: string;
+}
+
+const { height = 34, seed = 0, class: className, label } = Astro.props;
+
+// One tile. The path spans two of these; the viewBox shows one.
+const TILE = 1200;
+const MID = height / 2;
+const AMP = (height - 6) / 2;
+
+// Integer periods per tile, so the curve closes on itself across the tile.
+const HARMONICS: { periods: number; amp: number; phase: number }[] = [
+  { periods: 1, amp: 1.0, phase: 0.0 },
+  { periods: 2, amp: 0.45, phase: 1.7 },
+  { periods: 3, amp: 0.28, phase: 3.1 },
+  { periods: 5, amp: 0.16, phase: 5.2 },
+];
+
+const norm = HARMONICS.reduce((sum, h) => sum + h.amp, 0);
+
+function y(x: number): number {
+  let v = 0;
+  for (const h of HARMONICS) {
+    v += h.amp * Math.sin((2 * Math.PI * h.periods * x) / TILE + h.phase + seed);
+  }
+  return MID - (v / norm) * AMP;
+}
+
+// Sample densely enough that a polyline reads as a smooth curve at any width.
+const STEP = 8;
+const points: string[] = [];
+for (let x = 0; x <= TILE * 2; x += STEP) {
+  points.push(`${x.toFixed(1)},${y(x).toFixed(2)}`);
+}
+const d = `M${points.join(" L")}`;
+---
+
+<div
+  class:list={["math-rule", className]}
+  role={label ? "separator" : "presentation"}
+  aria-label={label}
+  aria-hidden={label ? undefined : "true"}
+>
+  <svg
+    viewBox={`0 0 ${TILE} ${height}`}
+    preserveAspectRatio="none"
+    fill="none"
+    class="block w-full"
+    style={`height:${height}px`}
+    aria-hidden="true"
+  >
+    <g class="math-rule__drift">
+      <path
+        d={d}
+        stroke="var(--color-accent-dim)"
+        stroke-width="1.25"
+        stroke-linecap="round"
+        vector-effect="non-scaling-stroke"
+      />
+      <path
+        d={d}
+        stroke="var(--color-accent)"
+        stroke-width="1.25"
+        stroke-linecap="round"
+        opacity="0.35"
+        transform={`translate(0 ${(AMP * 0.22).toFixed(2)})`}
+        vector-effect="non-scaling-stroke"
+      />
+    </g>
+  </svg>
+</div>
+
+<style>
+  .math-rule {
+    width: 100%;
+    overflow: hidden;
+    /* The curve is decoration around content, never a hit target. */
+    pointer-events: none;
+  }
+
+  /*
+    Scroll-scrubbed drift. `scroll()` binds progress to the nearest scrolling
+    ancestor, so the wave travels exactly one tile over the length of the page
+    and then has nowhere further to go, which is why the keyframe ends at a
+    whole tile: any other value would jump at the end.
+
+    Gated twice over. Without @supports the group simply never moves, and
+    reduced-motion users never receive js-reveal so they are excluded by the
+    same gate that governs every other entrance on the site.
+  */
+  @supports (animation-timeline: scroll()) {
+    :global(html.js-reveal) .math-rule__drift {
+      animation: math-rule-drift linear both;
+      animation-timeline: scroll();
+    }
+  }
+
+  @keyframes math-rule-drift {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      /* Exactly one tile of the two drawn, so the second copy lands where the
+         first began and the wrap is invisible. */
+      transform: translateX(-1200px);
+    }
+  }
+</style>

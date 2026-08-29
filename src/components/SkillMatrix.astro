@@ -102,6 +102,38 @@ const evidencedCount = allSkills.filter((s) => s.projectIds.size > 0).length;
 const totalCount = allSkills.length;
 
 /**
+ * Owner decision 2026-08-29: the matrix now carries ONLY the skills a project
+ * on this site actually evidences.
+ *
+ * It used to render every skill in profile.ts, which meant 19 of 41 rows were
+ * completely empty. That was honest but it was also most of the table's
+ * height, and a grid that is half blank reads as a gap rather than as a
+ * record. The unevidenced skills are not deleted, they move to a single line
+ * under the table, still stated plainly and still driving the resume from
+ * profile.ts. Nothing is claimed that was not claimed before; the same facts
+ * are just no longer spending twenty rows to say nothing.
+ */
+const evidencedGroups = groups
+  .map((g) => ({ ...g, skills: g.skills.filter((s) => s.projectIds.size > 0) }))
+  .filter((g) => g.skills.length > 0);
+
+const unevidenced = groups.flatMap((g) =>
+  g.skills.filter((s) => s.projectIds.size === 0).map((s) => s.name),
+);
+
+// Wavefront ordering. Each dot's animation delay is a function of its
+// position, so the fill sweeps the grid diagonally rather than all at once.
+// Row index has to be continuous ACROSS category bands, otherwise the wave
+// restarts at every band and reads as three separate animations.
+let waveRow = 0;
+const wavefront = new Map<string, number>();
+for (const g of evidencedGroups) {
+  for (const s of g.skills) {
+    wavefront.set(s.name, waveRow++);
+  }
+}
+
+/**
  * Column cross-highlight, generated per project rather than hand-written.
  *
  * Row highlighting is plain Tailwind (`group`/`group-hover` on the <tr>), but
@@ -132,38 +164,37 @@ const columnHighlightCss = projects
   <header class="mb-4 border-b border-rule pb-4">
     <h2 class="font-mono text-micro uppercase tracking-[0.2em] text-faint">Skills</h2>
     <p class="mt-3 max-w-[46rem] text-small text-muted">
-      Rows are skills, columns are the projects on this site. A filled cell
-      means that project's stack, methods, or domains genuinely include that
-      skill, cross-referenced from the same frontmatter that drives the case
-      studies, not self-rated. An empty row isn't a claim about how a skill
-      was learned; it just means nothing here demonstrates it yet.
+      Rows are skills, columns are the projects on this site. A filled cell means
+      that project's stack, methods, or domains genuinely include that skill,
+      cross-referenced from the same frontmatter that drives the case studies
+      rather than self-rated. Only skills a project here actually evidences get
+      a row; the rest are listed under the table.
     </p>
   </header>
 
   <p class="mb-8 font-mono text-micro uppercase tracking-wide text-faint">
-    {evidencedCount} of {totalCount} skills have at least one filled cell below
+    {evidencedCount} of {totalCount} skills are evidenced by a project below
   </p>
 
   {/* ONE table, not one per category. Three tables meant every project title
       repeated three times as a column header: the single largest source of
-      visual repetition on the page. Categories are now <tbody> row-groups,
-      so the projects are named exactly once. */}
+      visual repetition on the page. Categories are <tbody> row-groups, so the
+      projects are named exactly once. */}
   <div class="skill-matrix-wrap overflow-x-auto" data-reveal>
     <table class="skill-matrix border-collapse">
       <caption class="sr-only">
         Skills cross-referenced against this site's projects. A filled cell means
-        that project's stack, methods, or domains include that skill; an empty
-        cell means nothing published here demonstrates it yet.
+        that project's stack, methods, or domains include that skill.
       </caption>
       <thead>
         <tr>
-          <th scope="col" class="border border-rule px-3 py-1.5 text-left">
+          <th scope="col" class="border border-rule px-2 py-1 text-left">
             <span class="sr-only">Skill</span>
           </th>
           {projects.map((p) => (
             <th
               scope="col"
-              class="max-w-[9rem] whitespace-normal border border-rule px-3 py-1.5 text-left align-bottom font-mono text-micro font-medium uppercase tracking-wide text-muted"
+              class="max-w-[7rem] whitespace-normal border border-rule px-2 py-1 text-left align-bottom font-mono text-micro font-medium uppercase tracking-wide text-muted"
             >
               <a
                 href={`/work/${p.id}/`}
@@ -176,56 +207,64 @@ const columnHighlightCss = projects
         </tr>
       </thead>
 
-      {groups.map((group) => (
+      {evidencedGroups.map((group) => (
         <tbody>
-          {/* Category band: a full-width row label keeps the grouping without
-              needing a second table. */}
           <tr>
             <th
               scope="colgroup"
               colspan={projects.length + 1}
-              class="border border-rule bg-sunken px-3 py-2 text-left font-mono text-micro font-medium uppercase tracking-widest text-faint"
+              class="border border-rule bg-sunken px-2 py-1 text-left font-mono text-micro font-medium uppercase tracking-widest text-faint"
             >
               {group.label}
             </th>
           </tr>
 
-          {group.skills.map((skill) => {
-            const hasEvidence = skill.projectIds.size > 0;
-            return (
-              <tr class="group">
-                <th
-                  scope="row"
-                  class:list={[
-                    "whitespace-nowrap border border-rule px-3 py-1.5 text-left font-mono text-small font-normal transition-colors duration-200 ease-out-expo group-hover:bg-accent/10 group-focus-within:bg-accent/10",
-                    hasEvidence ? "text-text" : "text-faint",
-                  ]}
-                >
-                  {skill.name}
-                </th>
-                {projects.map((p) => {
-                  const used = skill.projectIds.has(p.id);
-                  return (
-                    <td class="min-w-[3rem] border border-rule px-3 py-1.5 text-center transition-colors duration-200 ease-out-expo group-hover:bg-accent/10 group-focus-within:bg-accent/10">
-                      {used && (
-                        <>
-                          <span
-                            aria-hidden="true"
-                            class="mx-auto block h-1.5 w-1.5 rounded-full bg-accent-dim transition-colors duration-200 ease-out-expo group-hover:bg-accent group-focus-within:bg-accent"
-                          />
-                          <span class="sr-only">used in {p.title}</span>
-                        </>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
+          {group.skills.map((skill) => (
+            <tr class="group">
+              <th
+                scope="row"
+                class="whitespace-nowrap border border-rule px-2 py-1 text-left font-mono text-micro font-normal text-text transition-colors duration-200 ease-out-expo group-hover:bg-accent/10 group-focus-within:bg-accent/10"
+              >
+                {skill.name}
+              </th>
+              {projects.map((p, colIndex) => {
+                const used = skill.projectIds.has(p.id);
+                return (
+                  <td class="min-w-[2rem] border border-rule px-2 py-1 text-center transition-colors duration-200 ease-out-expo group-hover:bg-accent/10 group-focus-within:bg-accent/10">
+                    {used && (
+                      <>
+                        {/* --w is the diagonal wavefront index: row + column.
+                            Cells sharing a diagonal light up together, so the
+                            fill sweeps across the grid instead of appearing
+                            all at once. */}
+                        <span
+                          aria-hidden="true"
+                          class="matrix-dot"
+                          style={`--w:${(wavefront.get(skill.name) ?? 0) + colIndex}`}
+                        />
+                        <span class="sr-only">used in {p.title}</span>
+                      </>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
         </tbody>
       ))}
     </table>
   </div>
+
+  {unevidenced.length > 0 && (
+    <p class="mt-6 max-w-[52rem] text-small text-muted" data-reveal>
+      <span class="font-mono text-micro uppercase tracking-[0.2em] text-faint">
+        Also used, not evidenced here:
+      </span>{" "}
+      <span class="text-text">{unevidenced.join(", ")}</span>. These are real,
+      they just have no project on this site behind them yet, so they get a line
+      rather than a row of empty cells.
+    </p>
+  )}
 </section>
 
 <style>
@@ -237,6 +276,62 @@ const columnHighlightCss = projects
    */
   .skill-matrix {
     width: auto;
+  }
+
+  /* The filled-cell marker. Sized down along with the cell padding: the grid
+     is a density read, so the cells only need to be big enough to see the
+     pattern, not big enough to be buttons. */
+  .matrix-dot {
+    display: block;
+    height: 0.3125rem;
+    width: 0.3125rem;
+    margin-inline: auto;
+    border-radius: 9999px;
+    background-color: var(--color-accent-dim);
+    transition: background-color 200ms var(--ease-out-expo);
+  }
+
+  .group:hover .matrix-dot,
+  .group:focus-within .matrix-dot {
+    background-color: var(--color-accent);
+  }
+
+  /*
+    Diagonal wavefront. --w is (row + column), so every cell on the same
+    diagonal shares a delay and the fill sweeps across the grid rather than
+    switching on all at once. It is the same summed-coordinate idea the glyph
+    field uses, sampled once on entry instead of every frame.
+
+    Scoped under html.js-reveal so the dots are simply present when JS is off
+    or motion is reduced: reveal.ts only adds that class when it has confirmed
+    both. This runs ONCE per page view, never loops, so it costs nothing after
+    it settles.
+  */
+  :global(html.js-reveal) .matrix-dot {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  :global(html.js-reveal) .skill-matrix-wrap.is-revealed .matrix-dot {
+    animation: matrix-wave 560ms var(--ease-spring) forwards;
+    animation-delay: calc(var(--w, 0) * 38ms);
+  }
+
+  @keyframes matrix-wave {
+    0% {
+      opacity: 0;
+      transform: scale(0);
+    }
+    55% {
+      opacity: 1;
+      transform: scale(1.45);
+      background-color: var(--color-bloom-hot);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+      background-color: var(--color-accent-dim);
+    }
   }
 
 </style>

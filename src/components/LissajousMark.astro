@@ -1,0 +1,114 @@
+---
+/**
+ * LissajousMark: a parametric curve used as a closing mark.
+ *
+ * x(t) = sin(a*t + d),  y(t) = sin(b*t)
+ *
+ * With integer a and b the curve is closed, which is what makes it usable as a
+ * mark rather than a scribble: the path returns exactly to its start, so it
+ * can be stroked as one continuous line with no join. The a:b ratio sets the
+ * knot pattern, and `delta` rotates the figure through its phase.
+ *
+ * It is the third sampling of the same idea the rest of the site is built on.
+ * The glyph field evaluates a summed sinusoid per cell per frame, MathRule
+ * traces one across a divider, ProjectArt contours one over an area, and this
+ * plots one against itself.
+ *
+ * MOTION: the stroke draws itself as the mark scrolls into view, using
+ * `animation-timeline: view()`. `pathLength="1"` normalises the curve so a
+ * single keyframe works regardless of how long the real path is. Browsers
+ * without scroll-driven animation, and reduced-motion users, get the finished
+ * curve: the dash properties are only ever set inside the @supports gate.
+ *
+ * Computed at build time. No Math.random, no Date.
+ */
+interface Props {
+  /** Horizontal frequency. Integer keeps the figure closed. */
+  a?: number;
+  /** Vertical frequency. Integer keeps the figure closed. */
+  b?: number;
+  /** Phase offset, in radians. */
+  delta?: number;
+  size?: number;
+  class?: string;
+}
+
+const { a = 3, b = 4, delta = Math.PI / 2, size = 180, class: className } = Astro.props;
+
+const VB = 100;
+const R = 44; // leaves room for the stroke and its glow inside the viewBox
+const CENTER = VB / 2;
+// Dense enough that the curve is smooth at any rendered size, cheap because
+// it is sampled once at build rather than per frame.
+const STEPS = 720;
+
+const pts: string[] = [];
+for (let i = 0; i <= STEPS; i++) {
+  const t = (i / STEPS) * Math.PI * 2;
+  const x = CENTER + R * Math.sin(a * t + delta);
+  const y = CENTER + R * Math.sin(b * t);
+  pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+}
+const d = `M${pts.join(" L")}`;
+---
+
+<div class:list={["lissajous", className]} aria-hidden="true">
+  <svg
+    viewBox={`0 0 ${VB} ${VB}`}
+    fill="none"
+    style={`width:${size}px;height:${size}px`}
+    class="block"
+  >
+    {/* Wide, dim pass underneath reads as the phosphor bloom around the
+        stroke without needing a filter, which would cost a blur per paint. */}
+    <path
+      d={d}
+      stroke="var(--color-accent-dim)"
+      stroke-width="2.4"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      opacity="0.28"
+      {...{ pathLength: 1 }}
+    />
+    <path
+      class="lissajous__line"
+      d={d}
+      stroke="var(--color-accent)"
+      stroke-width="0.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...{ pathLength: 1 }}
+    />
+  </svg>
+</div>
+
+<style>
+  .lissajous {
+    pointer-events: none;
+  }
+
+  @supports (animation-timeline: view()) {
+    :global(html.js-reveal) .lissajous path {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: lissajous-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 45%;
+    }
+
+    /* The bright line trails the dim one, so the curve reads as being drawn
+       rather than as two strokes appearing together. */
+    :global(html.js-reveal) .lissajous .lissajous__line {
+      animation-range: entry 18% cover 55%;
+    }
+  }
+
+  @keyframes lissajous-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+</style>
