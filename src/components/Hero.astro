@@ -197,15 +197,16 @@ import { profile } from "../data/profile";
     // actually on screen: the compositor hint on the full-viewport field
     // layer, and the name's infinite gradient sweep. Both used to run for
     // the life of the page, repainting behind content nobody was looking at.
-    const heroName = heroSection.querySelector("h1");
+    // The attribute goes on the SECTION, not on one child, so a single flag
+    // governs every looping animation the hero owns: the name's gradient sweep
+    // and the scroll cue's bounce. Both are decorative and neither is worth a
+    // repaint once nobody can see them.
     const heroVisibility = new IntersectionObserver(
       (entries) => {
         const visible = entries.some((e) => e.isIntersecting);
         fieldLayer.classList.toggle("is-hero-active", visible);
-        if (heroName) {
-          if (visible) heroName.removeAttribute("data-offscreen");
-          else heroName.setAttribute("data-offscreen", "");
-        }
+        if (visible) heroSection.removeAttribute("data-offscreen");
+        else heroSection.setAttribute("data-offscreen", "");
       },
       { rootMargin: "10% 0px" },
     );

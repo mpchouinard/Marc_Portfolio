@@ -229,12 +229,6 @@ h1, h2, h3 {
     animation: hero-sheen-drift 16s linear infinite;
   }
 
-  /* An infinite animation on an element carrying two drop-shadows keeps
-     repainting even after the hero has scrolled away, where nobody can see
-     it. Hero.astro sets this attribute once the hero leaves the viewport. */
-  #hero h1[data-offscreen] {
-    animation-play-state: paused;
-  }
 
   #hero h1::before,
   #hero h1::after {
@@ -272,6 +266,16 @@ h1, h2, h3 {
       color-mix(in oklab, var(--color-bloom-hot) 55%, transparent);
     transform: translate(0.022em, -0.022em);
   }
+}
+
+/* Every looping animation the hero owns, stopped once the hero is out of view:
+   the name's gradient sweep and the scroll cue's bounce. Hero.astro sets the
+   attribute from an IntersectionObserver. Deliberately OUTSIDE the text-stroke
+   @supports block above, since whether an animation is worth repainting has
+   nothing to do with whether the browser can stroke text. */
+#hero[data-offscreen] h1,
+#hero[data-offscreen] #hero-scroll-cue svg {
+  animation-play-state: paused;
 }
 
 a {
