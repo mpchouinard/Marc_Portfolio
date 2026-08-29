@@ -265,21 +265,27 @@ in final position immediately. Static fallback, never a shortened duration.
 
 ### The generative family (added 2026-08-29)
 
-The glyph field is no longer the only plotted geometry. Four components now
+The glyph field is no longer the only plotted geometry. Three components now
 sample the **same summed-sinusoid idea** at different rates, which is what keeps
 them one language rather than a pile of effects. Anything new in this space must
-join this family, not start a fifth style.
+join this family, not start a fourth style.
 
 | Component | Sampling | Motion |
 |---|---|---|
 | `scripts/glyph-field.ts` | per cell, per frame | rAF, scroll velocity coupled |
-| `components/MathRule.astro` | one curve along a divider | scroll-scrubbed drift |
 | `components/ProjectArt.astro` | iso-contours over an area | draws on scroll entry |
 | `components/LissajousMark.astro` | one curve against itself | draws on scroll entry |
 
-`MathRule` tiles seamlessly only because its harmonic numbers are **integers**,
-so `y(0) === y(W)`. `LissajousMark` is a closed figure for the same reason.
-Keep both integral or the seam and the join reappear.
+`LissajousMark` is a closed figure only because its `a` and `b` are
+**integers**, so the path returns exactly to its start. Keep them integral or
+the join reappears.
+
+**Owner decision 2026-08-29: no plotted section dividers.** A fourth member,
+`MathRule.astro`, drew a sinusoid between every section. Six of them across the
+site read as "random green lines all over the place" and were removed. The
+generative geometry now appears where it is doing a job (behind the content as
+the field, as a project's own art, as a page's closing mark) and never as
+chrome between sections. Do not reintroduce a divider-shaped member.
 
 ### Two rules every animation here follows
 

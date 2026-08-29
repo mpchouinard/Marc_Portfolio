@@ -33,7 +33,6 @@ import Trajectory from "../components/Trajectory.astro";
 import SkillMatrix from "../components/SkillMatrix.astro";
 import EducationPanel from "../components/EducationPanel.astro";
 import Contact from "../components/Contact.astro";
-import MathRule from "../components/MathRule.astro";
 import { getCollection } from "astro:content";
 import { profile } from "../data/profile";
 
@@ -74,23 +73,12 @@ const featured = (await getCollection("work"))
     )
   }
 
-  {/* Plotted dividers rather than borders. Each is the same summed-sinusoid
-      family as the glyph field, seeded differently so no two are identical,
-      and each drifts as the page scrolls. */}
-  <div class="mx-auto w-full max-w-[72rem] px-6 md:px-10">
-    <MathRule seed={0} />
-  </div>
-
   {/* Degree and roles on one axis: PLAN.md §2's "container made visible",
       applied to the biography spine. Projects live in "Selected work" above
       and the full timeline/browser on /work/, not here. Trajectory itself
       supplies its own <section>, so this is a plain div, not a nested one. */}
   <div class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
     <Trajectory />
-  </div>
-
-  <div class="mx-auto w-full max-w-[72rem] px-6 pb-16 md:px-10">
-    <MathRule seed={1.9} />
   </div>
 
   {/* Skills cross-referenced against the projects that actually evidence
@@ -108,15 +96,14 @@ const featured = (await getCollection("work"))
     <SkillMatrix />
   </div>
 
-  <div class="mx-auto w-full max-w-[72rem] px-6 py-16 md:px-10">
-    <MathRule seed={3.4} />
-  </div>
-
   {/* Education: an offset rail + capped-width column rather than a centered
       or full-bleed treatment, so it reads distinctly from the three
       sections above it. EducationPanel supplies its own <section>, so this
-      wrapper is a div. */}
-  <div class="mx-auto w-full max-w-[72rem] px-6 pb-24 md:px-10 md:pb-32">
+      wrapper is a div.
+
+      It carries its own top padding because the Skills band directly above
+      ends on a hard border: without it the two would collide. */}
+  <div class="mx-auto w-full max-w-[72rem] px-6 pt-24 pb-24 md:px-10 md:pt-32 md:pb-32">
     <div class="grid gap-6 md:grid-cols-[2.5rem_1fr] md:gap-10">
       <p class="font-mono text-micro text-faint" aria-hidden="true" data-reveal>
         04
@@ -125,10 +112,6 @@ const featured = (await getCollection("work"))
         <EducationPanel />
       </div>
     </div>
-  </div>
-
-  <div class="mx-auto w-full max-w-[72rem] px-6 pb-8 md:px-10">
-    <MathRule seed={5.1} />
   </div>
 
   <Contact />

@@ -20,7 +20,6 @@ import { getCollection, type CollectionEntry } from "astro:content";
 import Base from "../../layouts/Base.astro";
 import Timeline from "../../components/Timeline.astro";
 import FacetBrowser, { type FacetWorkEntry } from "../../components/FacetBrowser.tsx";
-import MathRule from "../../components/MathRule.astro";
 
 const allEntries = await getCollection("work");
 
@@ -74,11 +73,7 @@ const yearOptions = [...new Set(facetEntries.map((e) => e.year))].sort((a, b) =>
     </div>
   </section>
 
-  <div class="mt-20" aria-hidden="true">
-    <MathRule seed={2.6} />
-  </div>
-
-  <section aria-labelledby="browse-heading" class="mt-16" data-reveal>
+  <section aria-labelledby="browse-heading" class="mt-28" data-reveal>
     <h2 id="browse-heading" class="font-mono text-micro uppercase tracking-widest text-muted">
       Browse by facet
     </h2>
