@@ -38,14 +38,16 @@ const GLYPHS = [
 /** Target cell count on a large monitor stays well under the ~8k budget;
  *  cell pitch grows with viewport area so small screens stay legible and
  *  huge screens don't blow the grid up. */
-/* Owner decision 2026-08-29: wider glyphs. The cell pitch roughly doubled
-   (2200 -> 620 target cells) and the glyph now fills more of its cell, so the
-   field reads as deliberate symbols rather than texture. Fewer, larger cells
-   is also strictly cheaper per frame than the old grid. */
-const TARGET_CELLS = 620;
-const MIN_CELL_PX = 38;
+/* Owner decision 2026-08-29: wider glyphs, but NOT a sparser field.
+   The first pass cut the grid to 620 cells along with the glyph set, and the
+   background lost the dense "sheet of working" quality that made it read as
+   mathematics at all. Density is back near the original 2200 while each glyph
+   is drawn about 45% larger than before (a ~15.8px glyph on a 22px pitch,
+   against the old ~10.8px on 18px), which is what "wider" was asking for. */
+const TARGET_CELLS = 1800;
+const MIN_CELL_PX = 22;
 const MAX_DPR = 2;
-const FONT_RATIO = 0.74; // glyph font-size as a fraction of the cell pitch
+const FONT_RATIO = 0.72; // glyph font-size as a fraction of the cell pitch
 const REROLL_RATE = 0.006; // fraction of cells whose glyph re-rolls per frame
 const RESIZE_DEBOUNCE_MS = 150;
 const FONT_FALLBACK =

@@ -271,6 +271,26 @@ const nowLeft = pct(nowIdx);
   */
   .lane {
     outline: none;
+    /*
+      STACKING, and this is load-bearing.
+
+      Every lane carries `data-reveal`, and the reveal engine animates a
+      transform. A transform makes the element a stacking context, so a
+      z-index set on the panel INSIDE a lane can only order it against that
+      lane's own children: it can never lift the panel above a sibling lane.
+      The result was a panel that opened underneath every role below it.
+
+      The fix has to raise the whole lane, not the panel. `position: relative`
+      plus an explicit z-index on hover/focus moves this lane's entire
+      stacking context in front of its siblings, panel included.
+    */
+    position: relative;
+    z-index: 0;
+  }
+
+  .lane:hover,
+  .lane:focus-within {
+    z-index: 50;
   }
 
   .lane:focus-visible {
@@ -373,7 +393,16 @@ const nowLeft = pct(nowIdx);
     :global(html.js-reveal) .trajectory-bar {
       animation: trajectory-draw linear both;
       animation-timeline: view();
-      animation-range: entry 25% cover 35%;
+      /*
+        Ends on `entry`, not `cover`. `cover 35%` is roughly a third of the
+        way through the element's whole pass across the viewport, which put
+        the finish line near the vertical centre of the screen: the bars were
+        still visibly growing while you were already reading them. Finishing
+        at `entry 70%` means a lane is fully drawn well before it reaches the
+        middle, so the draw reads as the lane arriving rather than as a
+        progress bar the reader has to wait on.
+      */
+      animation-range: entry 0% entry 70%;
     }
   }
 
