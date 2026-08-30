@@ -25,16 +25,6 @@ const hasLinkedin = profile.links.linkedin.length > 0;
 ---
 
 <section aria-labelledby="contact-heading" class="relative overflow-hidden border-t border-rule">
-  {/* Closing mark: a 3:4 Lissajous figure that draws itself as the section
-      scrolls in. Sits behind the content, offset into the right margin so it
-      never competes with the email address, and is purely decorative. */}
-  <div
-    class="pointer-events-none absolute right-[-3rem] top-1/2 hidden -translate-y-1/2 opacity-[0.55] lg:block"
-    aria-hidden="true"
-  >
-    <LissajousMark a={3} b={4} size={320} />
-  </div>
-
   <div class="relative mx-auto w-full max-w-[72rem] px-6 py-28 md:px-10 md:py-40">
     <div class="flex flex-col items-start gap-8 md:gap-12" data-reveal-group>
       <h2
@@ -85,6 +75,16 @@ const hasLinkedin = profile.links.linkedin.length > 0;
             </a>
           )
         }
+      </div>
+
+      {/* Closing mark. It used to sit absolutely positioned in the right
+          margin behind the text, at 55% opacity, under `hidden lg:block`.
+          That meant it was invisible on any window under 1024px wide and
+          half-clipped even above it, which is a decoration nobody ever saw.
+          It is now a normal centred block in the flow: always rendered, at
+          full strength, with room of its own. */}
+      <div class="mt-6 w-full self-center sm:mt-10" aria-hidden="true">
+        <LissajousMark seed="contact" size={260} class="mx-auto" />
       </div>
     </div>
   </div>

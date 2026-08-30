@@ -33,6 +33,7 @@ import Trajectory from "../components/Trajectory.astro";
 import SkillMatrix from "../components/SkillMatrix.astro";
 import EducationPanel from "../components/EducationPanel.astro";
 import Contact from "../components/Contact.astro";
+import LissajousMark from "../components/LissajousMark.astro";
 import { getCollection } from "astro:content";
 import { profile } from "../data/profile";
 
@@ -73,6 +74,19 @@ const featured = (await getCollection("work"))
     )
   }
 
+  {/* Section marks. These replace the plotted line dividers that were removed
+      for reading as scattered green lines. A centred knot is the SAME motif as
+      the page's closing mark rather than a second shape, so repeating it reads
+      as a recurring signature instead of as clutter, and it is a compact
+      object rather than a full-width stroke, which is what made the lines look
+      limp. Seeded differently so each boundary gets its own ratio.
+
+      Kept to two on this page, at the boundaries that previously carried a
+      divider. More than that and it becomes the scatter it replaced. */}
+  <div class="mx-auto flex w-full max-w-[72rem] justify-center px-6 pb-24 md:px-10 md:pb-28" aria-hidden="true">
+    <LissajousMark seed="home-trajectory" size={128} />
+  </div>
+
   {/* Degree and roles on one axis: PLAN.md §2's "container made visible",
       applied to the biography spine. Projects live in "Selected work" above
       and the full timeline/browser on /work/, not here. Trajectory itself
@@ -102,8 +116,12 @@ const featured = (await getCollection("work"))
       wrapper is a div.
 
       It carries its own top padding because the Skills band directly above
-      ends on a hard border: without it the two would collide. */}
+      ends on a hard border: without it the two would collide. The mark below
+      sits inside that padding rather than adding more. */}
   <div class="mx-auto w-full max-w-[72rem] px-6 pt-24 pb-24 md:px-10 md:pt-32 md:pb-32">
+    <div class="mb-20 flex justify-center md:mb-28" aria-hidden="true">
+      <LissajousMark seed="home-education" size={128} />
+    </div>
     <div class="grid gap-6 md:grid-cols-[2.5rem_1fr] md:gap-10">
       <p class="font-mono text-micro text-faint" aria-hidden="true" data-reveal>
         04

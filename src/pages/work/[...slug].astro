@@ -95,18 +95,13 @@ const d = entry.data;
       <Content />
     </div>
 
-    {/* Closing mark. The a:b ratio is derived from the project's own taxonomy
-        counts, so each case study ends on a figure that is genuinely its own:
-        more methods knot the curve more, more domains raise its symmetry. It
-        is decorative and carries no information a reader needs. */}
+    {/* Closing mark, seeded off the slug so each case study ends on its own
+        figure and always the same one. The ratio comes from LissajousMark's
+        vetted table rather than from arithmetic on taxonomy counts: that
+        earlier approach read as principled but landed four of seven projects
+        on a ratio that reduces, which collapses the knot into stacked arcs.
+        Decorative; carries nothing a reader needs. */}
     <div class="mt-20 flex justify-center" aria-hidden="true">
-      <LissajousMark
-        a={2 + (d.methods.length % 4)}
-        b={3 + (d.domains.length % 4)}
-        delta={(d.stack.length % 7) * 0.4}
-        size={160}
-        class="opacity-70"
-      />
-    </div>
+      <LissajousMark seed={entry.id} size={190} class="opacity-80" /></div>
   </article>
 </Base>
