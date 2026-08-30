@@ -20,14 +20,28 @@
   --color-raised:   #131316;   /* cards, panels, code blocks */
   --color-sunken:   #060607;   /* footer, insets */
 
-  /* --- ink -------------------------------------------------------------- */
-  --color-text:     #D4D4D8;   /* body */
-  --color-bright:   #F4F4F5;   /* headings, emphasis */
-  --color-muted:    #8A8A93;   /* secondary, metadata */
-  --color-faint:    #52525B;   /* tertiary, disabled */
+  /* --- ink --------------------------------------------------------------
+     CONTRAST PASS, owner decision 2026-08-29. The ink ramp was tuned against
+     a flat near-black ground, but the glyph field sits behind every page and
+     adds moving luminance, so the two lower steps were failing in practice:
+     `faint` measured 2.56:1 against the ground, well under the 4.5:1 that
+     body text needs, and `muted` at 5.78:1 was marginal over the field's
+     crests. Both are now whiter. Measured against --color-ground:
+       text 16.19:1 (was 13.39) · bright 18.48:1 (was 18.00)
+       muted 10.06:1 (was 5.78) · faint 7.10:1 (was 2.56)
+     Do not walk these back toward grey without re-measuring over the field. */
+  --color-text:     #E8E8EC;   /* body */
+  --color-bright:   #F7F7F8;   /* headings, emphasis */
+  --color-muted:    #B8B8C2;   /* secondary, metadata */
+  --color-faint:    #9A9AA4;   /* tertiary, disabled */
 
-  /* --- structure -------------------------------------------------------- */
-  --color-rule:     #27272A;   /* hairlines, borders, grid */
+  /* --- structure --------------------------------------------------------
+     Lifted with the ink so hairlines and chip borders stay visible against
+     the field rather than dissolving into it. Chip and button borders are
+     real UI boundaries, so this clears the 3:1 that WCAG asks of them:
+     3.08:1, up from 1.33:1. The trajectory swim lanes no longer use this at
+     all; they are drawn in `muted` so the bars read as data, not chrome. */
+  --color-rule:     #5E5E67;   /* hairlines, borders, grid */
 
   /* --- accent (single, phosphor) ---------------------------------------- */
   --color-accent:   #4ADE80;

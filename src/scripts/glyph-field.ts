@@ -22,49 +22,30 @@
 
 import { prefersReducedMotion, onReducedMotionChange } from "./motion";
 
+/*
+  Owner decision 2026-08-29: two glyphs, not thirty-five.
+  The full set read as noise at a glance; a reader could not tell it was
+  mathematics rather than random characters. Sum and partial-derivative are
+  the two most legible at small size and the two most recognisably "maths",
+  so the field now says one thing clearly instead of many things faintly.
+  They are also drawn larger (see MIN_CELL_PX / FONT_RATIO below).
+*/
 const GLYPHS = [
   "∑", // sum
   "∂", // partial
-  "∇", // nabla
-  "∫", // integral
-  "∏", // product
-  "π", // pi
-  "λ", // lambda
-  "θ", // theta
-  "μ", // mu
-  "σ", // sigma
-  "∞", // infinity
-  "≈", // approx
-  "≠", // neq
-  "≤", // leq
-  "⊗", // otimes
-  "∈", // in
-  "∀", // forall
-  "∃", // exists
-  "ℝ", // R (reals)
-  "0",
-  "1",
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9",
-  "+",
-  "−",
-  "×",
-  "=",
 ];
 
 /** Target cell count on a large monitor stays well under the ~8k budget;
  *  cell pitch grows with viewport area so small screens stay legible and
  *  huge screens don't blow the grid up. */
-const TARGET_CELLS = 2200;
-const MIN_CELL_PX = 18;
+/* Owner decision 2026-08-29: wider glyphs. The cell pitch roughly doubled
+   (2200 -> 620 target cells) and the glyph now fills more of its cell, so the
+   field reads as deliberate symbols rather than texture. Fewer, larger cells
+   is also strictly cheaper per frame than the old grid. */
+const TARGET_CELLS = 620;
+const MIN_CELL_PX = 38;
 const MAX_DPR = 2;
-const FONT_RATIO = 0.6; // glyph font-size as a fraction of the cell pitch
+const FONT_RATIO = 0.74; // glyph font-size as a fraction of the cell pitch
 const REROLL_RATE = 0.006; // fraction of cells whose glyph re-rolls per frame
 const RESIZE_DEBOUNCE_MS = 150;
 const FONT_FALLBACK =

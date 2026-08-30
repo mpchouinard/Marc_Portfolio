@@ -104,61 +104,77 @@ export default function FacetBrowser({
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-wrap gap-x-8 gap-y-5">
-          <FacetGroupControl
-            label="Domain"
-            options={domainOptions}
-            selected={selectedDomains}
-            onToggle={(v) => setSelectedDomains((prev) => toggleInSet(prev, v))}
-          />
-          <FacetGroupControl
-            label="Method"
-            options={methodOptions}
-            selected={selectedMethods}
-            onToggle={(v) => setSelectedMethods((prev) => toggleInSet(prev, v))}
-          />
-          <FacetGroupControl
-            label="Year"
-            options={yearOptions.map(String)}
-            selected={new Set(Array.from(selectedYears, String))}
-            onToggle={(v) => setSelectedYears((prev) => toggleInSet(prev, Number(v)))}
-          />
+      {/*
+        The glyph field runs behind every page, so these controls previously
+        sat directly on moving luminance and were genuinely hard to read.
+        The panel is translucent with a backdrop blur rather than an opaque
+        fill: the field still reads through it, but it is blurred flat so the
+        labels and chips have a quiet ground to sit on.
+
+        `supports-[backdrop-filter]` keeps this honest. Browsers without
+        backdrop-filter get the near-opaque fallback fill instead of a
+        70%-transparent panel with nothing behind it, which would be less
+        readable than doing nothing at all.
+      */}
+      <div className="border border-rule bg-ground/95 p-5 supports-[backdrop-filter]:bg-ground/70 supports-[backdrop-filter]:backdrop-blur-md md:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-wrap gap-x-8 gap-y-5">
+            <FacetGroupControl
+              label="Domain"
+              options={domainOptions}
+              selected={selectedDomains}
+              onToggle={(v) => setSelectedDomains((prev) => toggleInSet(prev, v))}
+            />
+            <FacetGroupControl
+              label="Method"
+              options={methodOptions}
+              selected={selectedMethods}
+              onToggle={(v) => setSelectedMethods((prev) => toggleInSet(prev, v))}
+            />
+            <FacetGroupControl
+              label="Year"
+              options={yearOptions.map(String)}
+              selected={new Set(Array.from(selectedYears, String))}
+              onToggle={(v) => setSelectedYears((prev) => toggleInSet(prev, Number(v)))}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={resetAll}
+            disabled={!hasFilters}
+            className="shrink-0 border border-rule px-3 py-1.5 font-mono text-micro uppercase tracking-widest text-muted transition-colors duration-200 hover:enabled:border-accent-dim hover:enabled:text-accent disabled:opacity-40"
+          >
+            Reset filters
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={resetAll}
-          disabled={!hasFilters}
-          className="shrink-0 border border-rule px-3 py-1.5 font-mono text-micro uppercase tracking-widest text-muted transition-colors duration-200 hover:enabled:border-accent-dim hover:enabled:text-accent disabled:opacity-40"
-        >
-          Reset filters
-        </button>
+        {hasFilters && (
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-rule pt-4">
+            <span className="font-mono text-micro uppercase tracking-widest text-faint">
+              Active:
+            </span>
+            {activeFilters.map((f) => (
+              <button
+                key={`${f.group}-${f.value}`}
+                type="button"
+                onClick={() => removeFilter(f.group, f.value)}
+                aria-label={`Remove filter: ${f.group} ${f.label}`}
+                className="border border-accent-dim px-2 py-0.5 font-mono text-micro text-accent transition-colors duration-200 hover:bg-accent hover:text-ground"
+              >
+                <span aria-hidden="true">
+                  {f.label} ×
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <p aria-live="polite" className="mt-5 font-mono text-small text-muted">
+          {filtered.length} of {entries.length} {entries.length === 1 ? "project" : "projects"}
+          {hasFilters ? " match these filters" : ""}
+        </p>
       </div>
-
-      {hasFilters && (
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-rule pt-4">
-          <span className="font-mono text-micro uppercase tracking-widest text-faint">Active:</span>
-          {activeFilters.map((f) => (
-            <button
-              key={`${f.group}-${f.value}`}
-              type="button"
-              onClick={() => removeFilter(f.group, f.value)}
-              aria-label={`Remove filter: ${f.group} ${f.label}`}
-              className="border border-accent-dim px-2 py-0.5 font-mono text-micro text-accent transition-colors duration-200 hover:bg-accent hover:text-ground"
-            >
-              <span aria-hidden="true">
-                {f.label} ×
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <p aria-live="polite" className="mt-5 font-mono text-small text-muted">
-        {filtered.length} of {entries.length} {entries.length === 1 ? "project" : "projects"}
-        {hasFilters ? " match these filters" : ""}
-      </p>
 
       {filtered.length === 0 ? (
         <p className="mt-4 border border-dashed border-rule p-6 text-center text-small text-muted">

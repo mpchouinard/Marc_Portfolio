@@ -13,6 +13,12 @@
  * Everything is computed from real data, with `profile.ts` for education and
  * roles. Nothing here is authored copy.
  *
+ * Owner decision 2026-08-29: the chart shows ONLY the lanes by default. Role
+ * bullets used to render permanently under every bar, which buried the spine
+ * the section exists to show. They now live in a panel that opens on hover or
+ * keyboard focus (see the .lane__panel block in <style>) and unfolds inline
+ * on touch devices, where hover does not exist.
+ *
  * Geometry note: months are converted to an absolute integer index
  * (`year * 12 + month`) rather than parsed through `new Date("YYYY-MM")`,
  * which is timezone-sensitive and can shift a bar by a whole month depending
@@ -153,31 +159,27 @@ const nowLeft = pct(nowIdx);
             {group.title}
           </p>
 
-          <div class="flex flex-col gap-3" data-reveal-group>
+          <div class="flex flex-col gap-4" data-reveal-group>
             {group.lanes.map((lane) => (
-              <div class="group/lane relative" data-reveal>
-                {/* label row: always text, never colour-only */}
-                <div class="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono text-small">
+              <div
+                class="lane relative"
+                data-reveal
+                tabindex="0"
+                aria-label={`${lane.label}, ${lane.sublabel}, ${lane.rangeText}`}
+              >
+                {/* Default state is the swim lane plus just enough text to
+                    name it. Everything else lives in the panel below. */}
+                <div class="mb-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono text-small">
                   <span class="text-bright">{lane.label}</span>
-                  <span class="text-muted">{lane.sublabel}</span>
-                  <span class="text-micro text-faint">{lane.rangeText}</span>
+                  <span class="text-micro text-muted">{lane.rangeText}</span>
                 </div>
-
-                {lane.bullets && lane.bullets.length > 0 && (
-                  <ul class="mb-2 flex flex-col gap-1 text-small text-muted">
-                    {lane.bullets.map((b) => (
-                      <li class="border-l border-rule pl-3">{b}</li>
-                    ))}
-                  </ul>
-                )}
 
                 {/* the run */}
                 <div class="relative h-2" aria-hidden="true">
                   <span
                     class:list={[
                       "trajectory-bar absolute top-0 block h-2",
-                      lane.ongoing ? "bg-accent-dim" : "bg-rule",
-                      "transition-[filter] duration-200 group-hover/lane:brightness-150",
+                      lane.ongoing ? "bg-accent-dim" : "bg-muted",
                     ]}
                     style={`left:${leftPct(lane)}%; width:${widthPct(lane)}%; ${
                       lane.ongoing
@@ -185,6 +187,26 @@ const nowLeft = pct(nowIdx);
                         : ""
                     }`}
                   ></span>
+                </div>
+
+                {/* Detail, revealed on hover or keyboard focus. */}
+                <div class="lane__panel">
+                  <p class="font-mono text-micro uppercase tracking-[0.2em] text-faint">
+                    {lane.sublabel}
+                  </p>
+                  <p class="mt-1 font-mono text-small text-bright">
+                    {lane.label}
+                    {lane.ongoing && <span class="ml-2 text-accent">ongoing</span>}
+                  </p>
+                  <p class="mt-0.5 font-mono text-micro text-muted">{lane.rangeText}</p>
+
+                  {lane.bullets && lane.bullets.length > 0 && (
+                    <ul class="mt-3 flex flex-col gap-1.5 text-small text-text">
+                      {lane.bullets.map((b) => (
+                        <li class="border-l border-rule pl-3">{b}</li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
             ))}
@@ -226,6 +248,108 @@ const nowLeft = pct(nowIdx);
 </section>
 
 <style>
+  /*
+    LANE DETAIL PANEL
+    =================
+    The chart is now the swim lanes and their names, nothing else; the role
+    bullets, the organisation and the full date range only appear when a lane
+    is hovered or focused. The bullets used to sit under every bar
+    permanently, which meant the "spine" the section is built around was
+    buried under three paragraphs of text and the geometry stopped reading.
+
+    On CLAUDE.md section 5's `opacity: 0` prohibition: that rule exists so a
+    JS failure can never blank the page, and it is not violated here. This
+    panel is hidden by a CSS hover affordance, not by a load-time gate, so it
+    behaves identically with JS on, JS off, or for a crawler. Its content is
+    also still exposed to assistive tech (opacity, unlike `display: none` or
+    `visibility: hidden`, leaves the node in the accessibility tree) and is
+    duplicated verbatim in the narrow-viewport list below the chart.
+
+    The lane itself carries tabindex so keyboard users reach the panel, and
+    `@media (hover: none)` unfolds every panel inline on touch devices, which
+    have no hover state to trigger it.
+  */
+  .lane {
+    outline: none;
+  }
+
+  .lane:focus-visible {
+    outline: 1px solid var(--color-accent);
+    outline-offset: 6px;
+  }
+
+  .lane__panel {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.5rem);
+    z-index: 20;
+    width: max-content;
+    max-width: min(34rem, 100%);
+    border: 1px solid var(--color-rule);
+    /* Fallback for no backdrop-filter: near-opaque, so the panel is readable
+       over the glyph field either way. */
+    background-color: color-mix(in oklab, var(--color-ground) 96%, transparent);
+    padding: 0.875rem 1rem;
+    box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.9);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition:
+      opacity 160ms var(--ease-out-expo),
+      transform 160ms var(--ease-out-expo);
+  }
+
+  @supports (backdrop-filter: blur(10px)) {
+    .lane__panel {
+      background-color: color-mix(in oklab, var(--color-ground) 72%, transparent);
+      backdrop-filter: blur(10px);
+    }
+  }
+
+  .lane:hover .lane__panel,
+  .lane:focus-within .lane__panel {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* Brighten the lane it belongs to, so the link between bar and panel is
+     obvious when several lanes sit close together. */
+  .lane:hover .trajectory-bar,
+  .lane:focus-within .trajectory-bar {
+    filter: brightness(1.35);
+  }
+
+  .trajectory-bar {
+    transition: filter 200ms var(--ease-out-expo);
+  }
+
+  /*
+    Touch: no hover, and tapping a non-interactive element does not reliably
+    focus it on iOS. Rather than stranding the detail behind an interaction
+    that cannot happen, the panel simply becomes part of the flow.
+  */
+  @media (hover: none) {
+    .lane__panel {
+      position: static;
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+      margin-top: 0.75rem;
+      box-shadow: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lane__panel {
+      transition: none;
+      transform: none;
+    }
+    .trajectory-bar {
+      transition: none;
+    }
+  }
+
   /*
     The run bars draw themselves along the time axis as the spine scrolls in,
     left to right, which is the direction the axis is read. They are the one

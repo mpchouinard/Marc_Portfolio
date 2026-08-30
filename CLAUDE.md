@@ -159,7 +159,28 @@ that the work is real; almost no portfolio has them.
 
 ---
 
-## 4. Design tokens: LOCKED 2026-08-26
+## 4. Design tokens: LOCKED 2026-08-26, contrast pass 2026-08-29
+
+> **Contrast pass, owner decision 2026-08-29.** The ink ramp and `rule` were
+> re-cut whiter. The old values were tuned against a flat ground, but the glyph
+> field sits behind every page and adds moving luminance: `faint` measured
+> 2.56:1 against `ground`, under the 4.5:1 body text needs, and `muted` at
+> 5.78:1 was marginal over the field's crests. Measured now, against `ground`:
+>
+> | token | before | after |
+> |---|---|---|
+> | `text` | 13.39:1 | **16.19:1** |
+> | `bright` | 18.00:1 | **18.48:1** |
+> | `muted` | 5.78:1 | **10.06:1** |
+> | `faint` | 2.56:1 | **7.10:1** |
+> | `rule` | 1.33:1 | **3.08:1** |
+>
+> `rule` is deliberately at the 3:1 WCAG asks of UI boundaries rather than
+> higher: chip and button borders need to be visible, but this token is on
+> almost every element and pushing it further turns the page into a grid.
+> Re-measure over the field before darkening any of them again. The accent and
+> aurora families are unchanged.
+
 
 Direction: **"Terminal"**, chosen deliberately by the owner with PLAN.md §6's
 anti-pattern warning on the table. Near-black ground, a single phosphor accent,
@@ -174,8 +195,8 @@ every token is automatically a utility (`--color-ground` → `bg-ground`,
 
 ```
 ground   #0A0A0B    raised  #131316    sunken  #060607
-text     #D4D4D8    bright  #F4F4F5    muted   #8A8A93    faint  #52525B
-rule     #27272A    accent  #4ADE80    accent-dim #22C55E
+text     #E8E8EC    bright  #F7F7F8    muted   #B8B8C2    faint  #9A9AA4
+rule     #48484F    accent  #4ADE80    accent-dim #22C55E
 aurora-1 #08140E (near-black green)  aurora-2 #0E3320 (deep forest)  aurora-3 #14532D (moss)
 bloom-hot #86EFAC (light phosphor, for glyph crests and the additive bloom pass)
 
