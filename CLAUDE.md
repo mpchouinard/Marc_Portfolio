@@ -274,18 +274,30 @@ join this family, not start a fourth style.
 |---|---|---|
 | `scripts/glyph-field.ts` | per cell, per frame | rAF, scroll velocity coupled |
 | `components/ProjectArt.astro` | iso-contours over an area | draws on scroll entry |
-| `components/LissajousMark.astro` | one curve against itself | draws on scroll entry |
-
-`LissajousMark` is a closed figure only because its `a` and `b` are
-**integers**, so the path returns exactly to its start. Keep them integral or
-the join reappears.
+| `components/LissajousMark.astro` | one curve against itself, stacked | layers draw back to front on scroll |
 
 **Owner decision 2026-08-29: no plotted section dividers.** A fourth member,
 `MathRule.astro`, drew a sinusoid between every section. Six of them across the
-site read as "random green lines all over the place" and were removed. The
-generative geometry now appears where it is doing a job (behind the content as
-the field, as a project's own art, as a page's closing mark) and never as
+site read as "random green lines all over the place" and were removed. Stretched
+to a full-width container a single thin curve can only read as a limp squiggle.
+The generative geometry now appears where it is doing a job (behind the content
+as the field, as a project's own art, as a page's closing mark) and never as
 chrome between sections. Do not reintroduce a divider-shaped member.
+
+Three rules keep `LissajousMark` a closed knot rather than an outline:
+
+1. **`a` and `b` must be integers**, so the path returns exactly to its start.
+   Keep them integral or the join reappears.
+2. **`a:b` must also be coprime.** If the ratio reduces (2:6 is 1:3, 3:6 is
+   1:2) the figure collapses from a lattice into a few stacked arcs. An earlier
+   version derived `a` and `b` arithmetically from taxonomy counts, which
+   looked principled but put four of seven projects on a reducing ratio,
+   because every project happens to carry two or three domains. Ratios now come
+   from a hand-checked table in the component, selected by a hash of a seed.
+   Add to that table only after actually rendering the candidate.
+3. **Density is the point.** One curve is a thin outline. Twelve copies with
+   the phase advanced slightly each time produce the interference lattice a
+   harmonograph makes. The overlaps are what read as depth.
 
 ### Two rules every animation here follows
 

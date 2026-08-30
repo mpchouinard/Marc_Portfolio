@@ -1,54 +1,142 @@
 ---
 /**
- * LissajousMark: a parametric curve used as a closing mark.
+ * LissajousMark: a parametric knot used as a mark.
  *
- * x(t) = sin(a*t + d),  y(t) = sin(b*t)
+ *   x(t) = sin(a*t + delta),  y(t) = sin(b*t)
  *
  * With integer a and b the curve is closed, which is what makes it usable as a
  * mark rather than a scribble: the path returns exactly to its start, so it
- * can be stroked as one continuous line with no join. The a:b ratio sets the
- * knot pattern, and `delta` rotates the figure through its phase.
+ * strokes as one continuous line with no join.
  *
  * It is the third sampling of the same idea the rest of the site is built on.
  * The glyph field evaluates a summed sinusoid per cell per frame, ProjectArt
  * contours one over an area, and this plots one against itself.
  *
- * MOTION: the stroke draws itself as the mark scrolls into view, using
- * `animation-timeline: view()`. `pathLength="1"` normalises the curve so a
- * single keyframe works regardless of how long the real path is. Browsers
- * without scroll-driven animation, and reduced-motion users, get the finished
- * curve: the dash properties are only ever set inside the @supports gate.
+ * DENSITY IS THE POINT. A single Lissajous curve is a thin figure that reads as
+ * an outline. Drawing several copies with the phase `delta` advanced slightly
+ * each time produces the interference lattice a harmonograph makes: the curves
+ * cross each other at every phase offset and the overlaps read as depth. Layer
+ * count is the whole difference between "a line" and "an object".
  *
- * Computed at build time. No Math.random, no Date.
+ * The layers also carry a colour ramp, deep moss at the back through to hot
+ * phosphor at the front, so the stack has a front and a back rather than being
+ * a flat tangle.
+ *
+ * MOTION: the layers draw themselves in sequence as the mark scrolls into
+ * view, back to front, so the figure assembles depth-first. `pathLength="1"`
+ * normalises every curve so one keyframe drives all of them regardless of
+ * their real length, and the per-layer offset is set inline as an
+ * `animation-range`, which is inert unless a scroll timeline is actually
+ * driving it.
+ *
+ * Everything is computed at build time. No Math.random, no Date.
  */
+/**
+ * RATIO SELECTION MATTERS MORE THAN ANY OTHER PARAMETER.
+ *
+ * a:b must be coprime. If it reduces (2:6 is 1:3, 3:6 is 1:2) the figure
+ * collapses from a lattice into a few stacked arcs: a limp shape, not a knot.
+ * An earlier version derived a and b arithmetically from taxonomy counts,
+ * which looked principled but put four of seven projects on 1:3 or 1:2,
+ * because every project happens to carry two or three domains.
+ *
+ * So the ratio is chosen from a hand-checked table instead. Every pair here
+ * was rendered and eyeballed: all are coprime, none is so dense it turns to
+ * mush (4:7 does, and is deliberately absent). Selection is a hash of the
+ * seed, so a given project always gets the same figure and different projects
+ * get different ones, without either being left to chance.
+ */
+const RATIOS: [number, number][] = [
+  [3, 4],
+  [4, 5],
+  [5, 6],
+  [3, 5],
+  [5, 7],
+  [4, 3],
+  [6, 5],
+];
+
+function hash(seed: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h);
+}
+
 interface Props {
-  /** Horizontal frequency. Integer keeps the figure closed. */
+  /** Picks a ratio from RATIOS deterministically. Ignored if a and b are set. */
+  seed?: string;
+  /** Horizontal frequency. Overrides `seed`. Must be coprime with `b`. */
   a?: number;
-  /** Vertical frequency. Integer keeps the figure closed. */
+  /** Vertical frequency. Overrides `seed`. Must be coprime with `a`. */
   b?: number;
-  /** Phase offset, in radians. */
+  /** Phase offset of the frontmost curve, in radians. */
   delta?: number;
+  /** How many phase-shifted copies to stack. More is denser. */
+  layers?: number;
+  /** Radians between successive layers. Small values read as a thick, woven
+   *  ribbon; large values separate into distinct curves. */
+  spread?: number;
   size?: number;
   class?: string;
 }
 
-const { a = 3, b = 4, delta = Math.PI / 2, size = 180, class: className } = Astro.props;
+const {
+  seed,
+  a: aProp,
+  b: bProp,
+  delta = Math.PI / 2,
+  layers = 12,
+  spread = 0.1,
+  size = 180,
+  class: className,
+} = Astro.props;
+
+const picked = RATIOS[seed ? hash(seed) % RATIOS.length : 0];
+const a = aProp ?? picked[0];
+const b = bProp ?? picked[1];
 
 const VB = 100;
-const R = 44; // leaves room for the stroke and its glow inside the viewBox
+const R = 42; // leaves room for the stroke and its glow inside the viewBox
 const CENTER = VB / 2;
-// Dense enough that the curve is smooth at any rendered size, cheap because
-// it is sampled once at build rather than per frame.
 const STEPS = 720;
 
-const pts: string[] = [];
-for (let i = 0; i <= STEPS; i++) {
-  const t = (i / STEPS) * Math.PI * 2;
-  const x = CENTER + R * Math.sin(a * t + delta);
-  const y = CENTER + R * Math.sin(b * t);
-  pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+function curve(phase: number): string {
+  const pts: string[] = [];
+  for (let i = 0; i <= STEPS; i++) {
+    const t = (i / STEPS) * Math.PI * 2;
+    const x = CENTER + R * Math.sin(a * t + phase);
+    const y = CENTER + R * Math.sin(b * t);
+    pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+  }
+  return `M${pts.join(" L")}`;
 }
-const d = `M${pts.join(" L")}`;
+
+// Back to front. The last layer is the brightest and thinnest, so it reads as
+// the "true" curve and the rest as its phase history behind it.
+const RAMP = [
+  "var(--color-aurora-3)",
+  "var(--color-aurora-3)",
+  "var(--color-accent-dim)",
+  "var(--color-accent-dim)",
+  "var(--color-accent)",
+  "var(--color-accent)",
+  "var(--color-bloom-hot)",
+];
+
+const paths = Array.from({ length: layers }, (_, i) => {
+  const depth = layers === 1 ? 1 : i / (layers - 1); // 0 = back, 1 = front
+  return {
+    d: curve(delta - (layers - 1 - i) * spread),
+    stroke: RAMP[Math.round(depth * (RAMP.length - 1))],
+    width: (1.5 - depth * 0.9).toFixed(2),
+    opacity: (0.3 + depth * 0.7).toFixed(2),
+    // Back layers start drawing first, so the figure builds depth-first.
+    range: `entry ${(6 + i * 3).toFixed(0)}% cover ${(34 + i * 4).toFixed(0)}%`,
+  };
+});
 ---
 
 <div class:list={["lissajous", className]} aria-hidden="true">
@@ -56,28 +144,23 @@ const d = `M${pts.join(" L")}`;
     viewBox={`0 0 ${VB} ${VB}`}
     fill="none"
     style={`width:${size}px;height:${size}px`}
-    class="block"
+    class="lissajous__svg block"
   >
-    {/* Wide, dim pass underneath reads as the phosphor bloom around the
-        stroke without needing a filter, which would cost a blur per paint. */}
-    <path
-      d={d}
-      stroke="var(--color-accent-dim)"
-      stroke-width="2.4"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      opacity="0.28"
-      {...{ pathLength: 1 }}
-    />
-    <path
-      class="lissajous__line"
-      d={d}
-      stroke="var(--color-accent)"
-      stroke-width="0.8"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      {...{ pathLength: 1 }}
-    />
+    {
+      paths.map((p, i) => (
+        <path
+          class="lissajous__layer"
+          d={p.d}
+          stroke={p.stroke}
+          stroke-width={p.width}
+          stroke-opacity={p.opacity}
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          {...{ pathLength: 1 }}
+          style={`animation-range:${p.range};--layer:${i}`}
+        />
+      ))
+    }
   </svg>
 </div>
 
@@ -86,19 +169,23 @@ const d = `M${pts.join(" L")}`;
     pointer-events: none;
   }
 
+  /* The bloom. A drop-shadow on the whole figure is one filter for the entire
+     stack rather than a glow per path, which is what keeps a dense mark cheap.
+     Two radii: a tight one for definition, a wide one for the phosphor halo. */
+  .lissajous__svg {
+    filter:
+      drop-shadow(0 0 1px color-mix(in oklab, var(--color-accent) 55%, transparent))
+      drop-shadow(0 0 6px color-mix(in oklab, var(--color-accent-dim) 40%, transparent));
+  }
+
   @supports (animation-timeline: view()) {
-    :global(html.js-reveal) .lissajous path {
+    :global(html.js-reveal) .lissajous__layer {
       stroke-dasharray: 1;
       stroke-dashoffset: 1;
       animation: lissajous-draw linear both;
       animation-timeline: view();
-      animation-range: entry 10% cover 45%;
-    }
-
-    /* The bright line trails the dim one, so the curve reads as being drawn
-       rather than as two strokes appearing together. */
-    :global(html.js-reveal) .lissajous .lissajous__line {
-      animation-range: entry 18% cover 55%;
+      /* animation-range is set per layer inline, so each curve completes at a
+         different scroll position and the stack assembles back to front. */
     }
   }
 
