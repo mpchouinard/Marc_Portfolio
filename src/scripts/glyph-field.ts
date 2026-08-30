@@ -23,27 +23,58 @@
 import { prefersReducedMotion, onReducedMotionChange } from "./motion";
 
 /*
-  Owner decision 2026-08-29: two glyphs, not thirty-five.
-  The full set read as noise at a glance; a reader could not tell it was
-  mathematics rather than random characters. Sum and partial-derivative are
-  the two most legible at small size and the two most recognisably "maths",
-  so the field now says one thing clearly instead of many things faintly.
-  They are also drawn larger (see MIN_CELL_PX / FONT_RATIO below).
+  The full set is the point. A two-glyph field was tried on 2026-08-29 and
+  rejected on sight: at this density a repeating pair reads as wallpaper, not
+  as working. The variety is what makes it scan as mathematics rather than as
+  a texture, so the whole alphabet stays. What DID survive from that pass is
+  the size, see MIN_CELL_PX / FONT_RATIO below: the glyphs are drawn wider
+  than the original, they are just no longer only two of them.
 */
 const GLYPHS = [
   "∑", // sum
   "∂", // partial
+  "∇", // nabla
+  "∫", // integral
+  "∏", // product
+  "π", // pi
+  "λ", // lambda
+  "θ", // theta
+  "μ", // mu
+  "σ", // sigma
+  "∞", // infinity
+  "≈", // approx
+  "≠", // neq
+  "≤", // leq
+  "⊗", // otimes
+  "∈", // in
+  "∀", // forall
+  "∃", // exists
+  "ℝ", // R (reals)
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "+",
+  "−",
+  "×",
+  "=",
 ];
 
 /** Target cell count on a large monitor stays well under the ~8k budget;
  *  cell pitch grows with viewport area so small screens stay legible and
  *  huge screens don't blow the grid up. */
 /* Owner decision 2026-08-29: wider glyphs, but NOT a sparser field.
-   The first pass cut the grid to 620 cells along with the glyph set, and the
-   background lost the dense "sheet of working" quality that made it read as
-   mathematics at all. Density is back near the original 2200 while each glyph
-   is drawn about 45% larger than before (a ~15.8px glyph on a 22px pitch,
-   against the old ~10.8px on 18px), which is what "wider" was asking for. */
+   An earlier pass cut the grid to 620 cells and the background lost the dense
+   "sheet of working" quality that made it read as mathematics at all. Density
+   is back near the original 2200 while each glyph is drawn about 32% larger
+   than before (a ~19px glyph on a 26.8px pitch at 1440x900, against the old
+   ~14.6px on 24.3px), which is what "wider" was asking for. */
 const TARGET_CELLS = 1800;
 const MIN_CELL_PX = 22;
 const MAX_DPR = 2;

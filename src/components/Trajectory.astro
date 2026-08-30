@@ -306,9 +306,12 @@ const nowLeft = pct(nowIdx);
     width: max-content;
     max-width: min(34rem, 100%);
     border: 1px solid var(--color-rule);
-    /* Fallback for no backdrop-filter: near-opaque, so the panel is readable
-       over the glyph field either way. */
-    background-color: color-mix(in oklab, var(--color-ground) 96%, transparent);
+    /* Fully opaque, owner decision 2026-08-29. This started translucent with
+       a backdrop blur to match the facet panel, but a blurred field still
+       shows structure through the text, and unlike the facet panel this one
+       sits ON TOP of other content, so whatever it covered showed through
+       too. A popup that has to be read quickly gets a solid ground. */
+    background-color: var(--color-raised);
     padding: 0.875rem 1rem;
     box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.9);
     opacity: 0;
@@ -317,13 +320,6 @@ const nowLeft = pct(nowIdx);
     transition:
       opacity 160ms var(--ease-out-expo),
       transform 160ms var(--ease-out-expo);
-  }
-
-  @supports (backdrop-filter: blur(10px)) {
-    .lane__panel {
-      background-color: color-mix(in oklab, var(--color-ground) 72%, transparent);
-      backdrop-filter: blur(10px);
-    }
   }
 
   .lane:hover .lane__panel,
