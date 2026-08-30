@@ -40,30 +40,51 @@
  * which looked principled but put four of seven projects on 1:3 or 1:2,
  * because every project happens to carry two or three domains.
  *
- * So the ratio is chosen from a hand-checked table instead. Every pair here
- * was rendered and eyeballed: all are coprime, none is so dense it turns to
- * mush (4:7 does, and is deliberately absent). Selection is a hash of the
- * seed, so a given project always gets the same figure and different projects
- * get different ones, without either being left to chance.
+ * So the ratio is chosen from a hand-checked table instead. Selection is a
+ * hash of the seed, so a given project always gets the same figure and
+ * different projects get different ones, without either being left to chance.
+ *
+ * RATIO AND LAYER COUNT ARE COUPLED, and getting this wrong is what made the
+ * first version look like a green blob. The number of line crossings grows
+ * with both, so a high-order ratio at a high layer count fills its own dark
+ * space in completely. Rendered as a matrix, 3:4 and 5:4 survive ten layers,
+ * most pairs stop reading past eight, and 4:5 and 5:7 turn to mush by eight
+ * at any size. Those two are gone from the table and the default is seven.
+ *
+ * If you add a pair here, render it at 128px and at 260px first. A figure
+ * whose dark diamonds have closed up is no longer a knot, it is a texture.
+ */
+/**
+ * TRANSPOSES ARE NOT VARIETY. 4:3 is 3:4 rotated a quarter turn and 5:3 is
+ * 3:5 rotated, so a table containing both pairs looked like six options while
+ * offering four shapes. With the seeds actually in use it put seven of ten
+ * marks on what reads as the same figure, and two case studies rendered
+ * visually identical. Only one of each transpose pair is kept.
  */
 const RATIOS: [number, number][] = [
   [3, 4],
-  [4, 5],
-  [5, 6],
+  [5, 4],
   [3, 5],
-  [5, 7],
-  [4, 3],
-  [6, 5],
+  [5, 6],
 ];
 
+/** FNV-1a. `>>> 0` rather than Math.abs so the full 32 bits survive: the high
+ *  bits are what the mix below folds down, and Math.abs would discard the sign
+ *  bit and skew the result. */
 function hash(seed: string): number {
   let h = 2166136261;
   for (let i = 0; i < seed.length; i++) {
     h ^= seed.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
-  return Math.abs(h);
+  return h >>> 0;
 }
+
+/** Folding the high half into the low half before the modulo. Raw FNV over
+ *  short, similar strings ("dropscout", "househub") clusters badly in its low
+ *  bits; measured over the site's real seeds this is what puts every ratio in
+ *  play instead of leaving one unused. */
+const mix = (h: number) => (h ^ (h >>> 16)) >>> 0;
 
 interface Props {
   /** Picks a ratio from RATIOS deterministically. Ignored if a and b are set. */
@@ -87,16 +108,23 @@ const {
   seed,
   a: aProp,
   b: bProp,
-  delta = Math.PI / 2,
-  layers = 12,
+  delta: deltaProp,
+  layers = 7,
   spread = 0.1,
   size = 180,
   class: className,
 } = Astro.props;
 
-const picked = RATIOS[seed ? hash(seed) % RATIOS.length : 0];
+const h = seed ? hash(seed) : 0;
+const picked = RATIOS[seed ? mix(h) % RATIOS.length : 0];
 const a = aProp ?? picked[0];
 const b = bProp ?? picked[1];
+
+// Phase comes from a different slice of the same hash than the ratio does, so
+// two seeds that collide on a ratio still land on different orientations. With
+// only four shapes available and ten marks on the site, collisions are certain;
+// this is what stops them reading as duplicates.
+const delta = deltaProp ?? (seed ? ((h >>> 8) % 8) * (Math.PI / 8) : Math.PI / 2);
 
 const VB = 100;
 const R = 42; // leaves room for the stroke and its glow inside the viewBox

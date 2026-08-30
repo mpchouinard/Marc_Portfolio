@@ -284,7 +284,21 @@ The generative geometry now appears where it is doing a job (behind the content
 as the field, as a project's own art, as a page's closing mark) and never as
 chrome between sections. Do not reintroduce a divider-shaped member.
 
-Three rules keep `LissajousMark` a closed knot rather than an outline:
+**Owner amendment, later the same day: the boundaries were too bare.** With the
+lines gone the section joins read as dead space. They now carry a centred
+`LissajousMark` instead. This is not a walk-back of the rule above: the
+objection was to a full-width stroke; the replacement is the page's own
+closing motif at a smaller size, so repetition reads as a signature rather than
+as scatter. Two on the homepage, at the joins that previously held a divider.
+Adding more would recreate the problem.
+
+**Nothing decorative may be `hidden` below a breakpoint.** The Contact mark was
+first placed absolutely in the right margin under `hidden lg:block` at 55%
+opacity, which meant it never rendered on any window under 1024px and was
+clipped above it. The owner reported the figure had disappeared. It is now a
+normal centred block in the flow.
+
+Four rules keep `LissajousMark` a closed knot rather than an outline:
 
 1. **`a` and `b` must be integers**, so the path returns exactly to its start.
    Keep them integral or the join reappears.
@@ -295,9 +309,20 @@ Three rules keep `LissajousMark` a closed knot rather than an outline:
    because every project happens to carry two or three domains. Ratios now come
    from a hand-checked table in the component, selected by a hash of a seed.
    Add to that table only after actually rendering the candidate.
-3. **Density is the point.** One curve is a thin outline. Twelve copies with
-   the phase advanced slightly each time produce the interference lattice a
-   harmonograph makes. The overlaps are what read as depth.
+3. **Density is the point, but ratio and layer count are coupled.** One curve
+   is a thin outline; several with the phase advanced slightly produce the
+   interference lattice a harmonograph makes. The overlaps are what read as
+   depth. Crossings grow with both numbers though, so a high-order ratio at a
+   high layer count fills its own dark space in and becomes a green blob.
+   Rendered as a matrix: 3:4 and 5:4 survive ten layers, most pairs stop
+   reading past eight, 4:5 and 5:7 are mush by eight at any size. The default
+   is seven. Render any new pair at 128px and 260px before adding it.
+4. **Never list both a ratio and its transpose.** 4:3 is 3:4 rotated a quarter
+   turn. A table holding both pairs looked like six options while offering four
+   shapes while putting seven of ten marks on what reads as one figure. Phase is
+   drawn from a different slice of the hash than the ratio, so seeds that
+   collide on a shape still differ in orientation. All seven case studies
+   currently render geometrically distinct figures; keep it that way.
 
 ### Two rules every animation here follows
 
