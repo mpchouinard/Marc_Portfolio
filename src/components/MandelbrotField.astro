@@ -1,0 +1,53 @@
+---
+/**
+ * MandelbrotField: the canvas surface for the homepage hero's zooming
+ * Mandelbrot tour. Purely decorative: `aria-hidden`, no `tabindex`, so it
+ * never enters the keyboard tab order and is invisible to assistive tech.
+ *
+ * All the actual work (grid layout, the worker-backed escape-time field,
+ * dive/hold/dissolve pacing, reduced-motion handling, visibility-aware
+ * pausing) lives in `../scripts/mandelbrot-field.ts`. This component just
+ * mounts the canvas and hands it off, mirroring `GlyphField.astro`.
+ */
+export interface Props {
+  /** Extra classes merged onto the canvas (e.g. for the parent to control
+   *  stacking/sizing as part of the hero layout). */
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<canvas
+  data-mandelbrot-field
+  aria-hidden="true"
+  class:list={["pointer-events-none block h-full w-full", className]}
+></canvas>
+
+<script>
+  import { initMandelbrotField } from "../scripts/mandelbrot-field";
+
+  // Idempotent: mounts any mandelbrot-field canvas that hasn't been mounted
+  // yet. This guard also makes it safe if the script re-runs after a View
+  // Transitions swap.
+  function mountAll(): void {
+    const canvases = document.querySelectorAll<HTMLCanvasElement>(
+      "canvas[data-mandelbrot-field]:not([data-mandelbrot-mounted])",
+    );
+    canvases.forEach((canvas) => {
+      canvas.dataset.mandelbrotMounted = "true";
+      initMandelbrotField(canvas);
+      // Hero.astro looks the handle back up via getMandelbrotField(canvas)
+      // rather than a global, since (unlike the single-instance ambient
+      // field) this component's ownership is scoped to whichever canvas
+      // the hero mounted.
+      window.dispatchEvent(new CustomEvent("mandelbrotfield:ready", { detail: { canvas } }));
+    });
+  }
+
+  mountAll();
+
+  // astro:page-load fires after every View Transitions swap (including the
+  // first load), so a freshly swapped-in canvas gets mounted too.
+  document.addEventListener("astro:page-load", mountAll);
+</script>

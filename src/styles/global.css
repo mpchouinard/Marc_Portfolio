@@ -77,18 +77,31 @@
   --font-body:    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* --- type scale (explicit weights) ------------------------------------ */
-  /* The hero name is set on ONE line at every viewport width (Hero.astro adds
-     white-space: nowrap). A plain vw value cannot guarantee that: it either
-     overflows narrow screens or wastes width on wide ones. So the size is
-     derived from the space actually available instead.
+  /* Owner decision 2026-09-16: the hero's focus moved to the Mandelbrot dive
+     behind it, so the name is a LOT smaller, about half the viewport width
+     rather than nearly filling it (roughly 61px at a 1440px-wide viewport),
+     still set on ONE line at every width (Hero.astro adds white-space:
+     nowrap). 50vw divided by --hero-em-width, the measured width of the name
+     in em at this typeface, gives that half-width size; clamp() caps it at
+     6.5rem so it stops growing on very wide displays.
 
-     100vw minus 3rem is the viewport less Hero's px-6 gutters. Dividing by
-     --hero-em-width, the measured width of the name in em at this typeface,
-     yields the largest size that still fits, capped at 9rem so it stops
-     growing on very wide displays. Remeasure --hero-em-width if the name or
-     --font-display ever changes. */
+     The floor is NOT a flat 1.75rem: on a narrow phone that flat value can
+     be wider than the space actually left for it and clip against the
+     screen edge (verified: a 330px viewport clipped "M" and "d" off the
+     name). The floor is instead `min(1.75rem, calc((100vw - 6rem) /
+     --hero-em-width))`, the same width-derived formula as the preferred
+     value, just against the full viewport instead of half of it, so it can
+     never exceed what actually fits. 6rem is Hero.astro's combined
+     horizontal padding around the name at the narrow breakpoint: the text
+     wrapper's `px-6` (3rem total) plus `.hero-halo`'s `px-6` there (3rem
+     total, `md:px-10` above that breakpoint) -- re-derive this number if
+     either padding value changes. 1.75rem is still the practical floor on
+     most phones (a 375px phone lands at 1.75rem, about 85% of the viewport
+     width; half-width there would be unreadable), the `min()` only steps in
+     below the width where even that stops fitting. Remeasure
+     --hero-em-width if the name or --font-display ever changes. */
   --hero-em-width: 11.75;
-  --text-hero:     min(9rem, calc((100vw - 3rem) / var(--hero-em-width)));
+  --text-hero:     clamp(min(1.75rem, calc((100vw - 6rem) / var(--hero-em-width))), calc(50vw / var(--hero-em-width)), 6.5rem);
   --text-display:  clamp(2rem, 5.5vw, 3.5rem);
   --text-title:    clamp(1.5rem, 3vw, 2rem);
   --text-lede:     clamp(1.0625rem, 1.6vw, 1.25rem);

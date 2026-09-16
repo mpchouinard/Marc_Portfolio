@@ -203,7 +203,7 @@ bloom-hot #86EFAC (light phosphor, for glyph crests and the additive bloom pass)
 --font-display / --font-mono   JetBrains Mono Variable   (identity: display, nav, labels, metrics, code)
 --font-body                    Inter Variable            (long-form case-study prose ONLY)
 
---text-hero clamp(2.75rem,11vw,9rem) · --text-display · --text-title
+--text-hero clamp(1.75rem,calc(50vw/--hero-em-width),6.5rem) · --text-display · --text-title
 --text-lede · --text-body · --text-small · --text-micro
 --ease-out-expo · --ease-spring · --ease-settle   (see §5)
 ```
@@ -231,15 +231,32 @@ Two owner decisions are baked in here:
    into teal + violet and was rejected. The whole transition now stays in one
    hue family. Do not reintroduce a second hue.
 2. **The field follows the reader down the page.** It is mounted once in
-   `Base.astro`, fixed behind all content and the hero scrubs its intensity
-   from 1 to ~0.14 rather than fading it to nothing. There must only ever be
-   ONE field canvas per document: `window.__glyphField` assumes it.
+   `Base.astro`, fixed behind all content. On the homepage the hero now holds
+   it at intensity 0, hidden under the hero's own opaque layer (see the owner
+   decision below), and the scroll scrub hands off to it, 0 to ~0.14, blur 0
+   to 6px, rather than fading it to nothing. There must only ever be ONE field
+   canvas per document: `window.__glyphField` assumes it.
 
 Scroll velocity from Lenis is piped into the field, damped, so fast scrolling
 shears the pattern and it settles afterwards. That is the "adhering to physics"
 feel; keep it damped, never 1:1 with scroll.
 
 Explicitly NOT Matrix-style falling rain.
+
+**Owner decision 2026-09-16: the hero's own signature is now a Mandelbrot
+glyph dive.** A hero-scoped canvas (`components/MandelbrotField.astro`,
+`scripts/mandelbrot-field.ts`) sits behind the name and tagline, computed in a
+Web Worker (`scripts/mandelbrot.worker.ts`, maths in
+`scripts/mandelbrot-kernel.ts`) so escape-time iteration never blocks the main
+thread. It zooms continuously through a tour of verified targets
+(`scripts/mandelbrot-targets.ts`), each dive ending on a minibrot centred in
+frame before dissolving glyph by glyph into the next. This is a SECOND canvas,
+not a second field: the sinusoid glyph field above remains the document
+background and the only `window.__glyphField`. The two share their visual
+language, alphabet, palette and bloom atlas, through `scripts/glyph-kit.ts`,
+so the fractal reads as the same signature material rather than a competing
+effect. On the homepage the document field is held at intensity 0 beneath the
+hero's opaque fractal layer until the scrub begins.
 
 ## 5. Motion rules
 
@@ -296,6 +313,22 @@ join this family, not start a fourth style.
 | `scripts/glyph-field.ts` | per cell, per frame | rAF, scroll velocity coupled |
 | `components/ProjectArt.astro` | iso-contours over an area | draws on scroll entry |
 | `components/LissajousMark.astro` | one curve against itself, stacked | layers draw back to front on scroll |
+| `scripts/mandelbrot-field.ts` | escape time per cell, per worker frame | rAF draw, continuous zoom tour |
+
+**Owner decision 2026-09-16: the fractal is the one family member not
+sampling summed sinusoids.** `mandelbrot-field.ts` plots escape-time
+iteration instead, an explicit owner call, because a Mandelbrot dive is the
+whole point of the hero rework. It still joins the family visually rather
+than starting a fifth style: it draws from the same glyph alphabet, palette
+and bloom atlas as the sinusoid field, shared through `scripts/glyph-kit.ts`,
+which both glyph engines must keep using rather than forking their own
+copies. **Target rule, same discipline as the LissajousMark ratio table:** a
+target enters `mandelbrot-targets.ts` only as a Newton-converged minibrot
+nucleus that passes `node --experimental-strip-types
+tools/check-mandelbrot-targets.mjs`, which checks the centre window keeps
+recognisable structure at 8 log-spaced depths, ends on a centred minibrot that
+fits the frame, and leaves double-precision headroom. Do not hand-pick a
+coordinate and skip the checker.
 
 **Owner decision 2026-08-29: no plotted section dividers.** A fourth member,
 `MathRule.astro`, drew a sinusoid between every section. Six of them across the
@@ -357,9 +390,13 @@ contract, applied to geometry.
 
 **2. Loops must be justified and bounded.** Prefer scroll-driven timelines: the
 browser scrubs them and they cost nothing while the page is still. As of this
-writing the whole site runs exactly **two** looping animations, the hero name's
-sweep and the `ongoing` markers; and the hero's pause when it scrolls out of
-view. Before adding a third, check `animation:.*infinite` across `dist/`.
+writing the whole site runs exactly **two** looping CSS animations, the hero
+name's sweep and the `ongoing` markers; and the hero's pause when it scrolls
+out of view. Before adding a third, check `animation:.*infinite` across
+`dist/`. The hero also now runs the Mandelbrot field's own rAF draw loop, a
+canvas loop rather than a CSS one, governed by the same pause rules as every
+other canvas here (off-screen, `document.hidden`, `astro:before-swap`); it
+does not count against the CSS `infinite`-animation budget above.
 
 **Performance precedent, do not regress it:** the bloom pass once called
 `fillText` per crest cell with `ctx.shadowBlur` set. Measured at 1920x1080 that
@@ -387,14 +424,21 @@ src/
   styles/global.css     # tokens: Wave 0 only
   scripts/
     motion.ts           # Lenis + GSAP wiring, reduced-motion, scroll velocity
-    glyph-field.ts      # the canvas engine
+    glyph-field.ts      # the document field's canvas engine
+    glyph-kit.ts        # shared alphabet/palette/bloom atlas for both glyph engines
+    mandelbrot-kernel.ts   # escape-time maths, no DOM/canvas
+    mandelbrot-targets.ts  # verified dive targets, see tools/check-mandelbrot-targets.mjs
+    mandelbrot.worker.ts   # runs the kernel off the main thread
+    mandelbrot-field.ts    # hero fractal canvas engine (§5 generative family)
     reveal.ts           # the declarative reveal engine (§5)
-  components/           # Nav, Footer, Hero, GlyphField, cards, tables
+  components/           # Nav, Footer, Hero, GlyphField, MandelbrotField, cards, tables
   layouts/Base.astro    # shared shell; Props interface is FIXED
   pages/
     index.astro         # hero + selected work
     work/index.astro    # timeline + faceted browser
     work/[...slug].astro# case study template
+tools/
+  check-mandelbrot-targets.mjs  # verifies a candidate target before it enters mandelbrot-targets.ts
 ```
 
 ---

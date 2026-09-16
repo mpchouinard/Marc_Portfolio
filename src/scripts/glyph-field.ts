@@ -21,50 +21,16 @@
  */
 
 import { prefersReducedMotion, onReducedMotionChange } from "./motion";
-
-/*
-  The full set is the point. A two-glyph field was tried on 2026-08-29 and
-  rejected on sight: at this density a repeating pair reads as wallpaper, not
-  as working. The variety is what makes it scan as mathematics rather than as
-  a texture, so the whole alphabet stays. What DID survive from that pass is
-  the size, see MIN_CELL_PX / FONT_RATIO below: the glyphs are drawn wider
-  than the original, they are just no longer only two of them.
-*/
-const GLYPHS = [
-  "∑", // sum
-  "∂", // partial
-  "∇", // nabla
-  "∫", // integral
-  "∏", // product
-  "π", // pi
-  "λ", // lambda
-  "θ", // theta
-  "μ", // mu
-  "σ", // sigma
-  "∞", // infinity
-  "≈", // approx
-  "≠", // neq
-  "≤", // leq
-  "⊗", // otimes
-  "∈", // in
-  "∀", // forall
-  "∃", // exists
-  "ℝ", // R (reals)
-  "0",
-  "1",
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9",
-  "+",
-  "−",
-  "×",
-  "=",
-];
+import {
+  GLYPHS,
+  FONT_FALLBACK,
+  FONT_RATIO,
+  readCssVar,
+  buildPalette,
+  buildGlowAtlas,
+  drawCrests,
+  type GlowAtlas,
+} from "./glyph-kit";
 
 /** Target cell count on a large monitor stays well under the ~8k budget;
  *  cell pitch grows with viewport area so small screens stay legible and
@@ -78,100 +44,8 @@ const GLYPHS = [
 const TARGET_CELLS = 1800;
 const MIN_CELL_PX = 22;
 const MAX_DPR = 2;
-const FONT_RATIO = 0.72; // glyph font-size as a fraction of the cell pitch
 const REROLL_RATE = 0.006; // fraction of cells whose glyph re-rolls per frame
 const RESIZE_DEBOUNCE_MS = 150;
-const FONT_FALLBACK =
-  '"JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace';
-
-interface Palette {
-  /** Brightness bucket at/above which a cell is a "crest" and gets the
-   *  additive bloom pass. Stored on the palette so it moves with the ramp. */
-  crestBucket: number;
-  /** Precomputed rgba() strings, indexed by a quantized brightness bucket,
-   *  so the render loop never allocates a color string per cell per frame. */
-  stops: string[];
-}
-
-function readCssVar(name: string, fallback: string): string {
-  if (typeof window === "undefined") return fallback;
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return value || fallback;
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const clean = hex.replace("#", "").trim();
-  const full =
-    clean.length === 3
-      ? clean
-          .split("")
-          .map((c) => c + c)
-          .join("")
-      : clean;
-  const int = Number.parseInt(full, 16);
-  return [(int >> 16) & 255, (int >> 8) & 255, int & 255];
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-function lerpRgb(
-  a: [number, number, number],
-  b: [number, number, number],
-  t: number,
-): [number, number, number] {
-  return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
-}
-
-/**
- * Builds a lookup table of rgba() strings spanning faint -> muted -> accent.
- * Most of the range stays in the low-alpha faint/muted band; only the top
- * of the curve reaches toward the accent color, matching "let only the
- * crests of the field reach --color-accent" from the brief.
- */
-function buildPalette(): Palette {
-  const faint = hexToRgb(readCssVar("--color-faint", "#52525B"));
-  const muted = hexToRgb(readCssVar("--color-muted", "#8A8A93"));
-  const accent = hexToRgb(readCssVar("--color-accent", "#4ADE80"));
-  const bloomHot = hexToRgb(readCssVar("--color-bloom-hot", "#86EFAC"));
-
-  const size = 128;
-  const stops = new Array<string>(size);
-
-  // Vibrancy pass (owner asked for a more vibrant hero, same mechanic).
-  // The ramp is now three segments instead of two, with the accent band
-  // starts much earlier, so a far larger share of the field carries colour
-  // rather than sitting in the grey-green floor.
-  const mutedAt = 0.42; // was 0.62, accent now begins far sooner
-  const hotAt = 0.86; // top of the ramp blooms past accent into bloom-hot
-
-  for (let i = 0; i < size; i++) {
-    const t = i / (size - 1);
-    let rgb: [number, number, number];
-    let alpha: number;
-
-    if (t < mutedAt) {
-      const localT = t / mutedAt;
-      rgb = lerpRgb(faint, muted, localT);
-      alpha = lerp(0.14, 0.42, localT);
-    } else if (t < hotAt) {
-      const localT = (t - mutedAt) / (hotAt - mutedAt);
-      // Gentler curve than before (1.6 -> 1.15) so the climb to accent is
-      // a broad glow rather than a spike confined to rare crests.
-      rgb = lerpRgb(muted, accent, Math.pow(localT, 1.15));
-      alpha = lerp(0.42, 0.88, localT);
-    } else {
-      const localT = (t - hotAt) / (1 - hotAt);
-      rgb = lerpRgb(accent, bloomHot, localT);
-      alpha = lerp(0.88, 1, localT);
-    }
-
-    stops[i] = `rgba(${rgb[0] | 0}, ${rgb[1] | 0}, ${rgb[2] | 0}, ${alpha.toFixed(3)})`;
-  }
-
-  return { stops, crestBucket: Math.floor(hotAt * (size - 1)) };
-}
 
 /** The scalar field. nx/ny are grid-normalized coordinates (roughly the
  *  column/row index scaled down), t is elapsed seconds. Returns a value
@@ -257,60 +131,7 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
   // frame. Both used to be recomputed inside drawFrame, which meant a
   // getComputedStyle call and a full shadow-blur setup on every tick.
   let fontFamily = FONT_FALLBACK;
-  let glowAtlas: HTMLCanvasElement | null = null;
-  let glowTile = 0;
-  let glowKey = "";
-
-  /**
-   * PERFORMANCE: the additive bloom used to call `fillText` once per crest
-   * cell with `ctx.shadowBlur` set. Canvas shadow blur is applied per draw
-   * call and is not cheap: measured on a 1920x1080 grid it cost 2.9ms for
-   * 10% of cells and 6.8ms for 25%, against a 16.7ms frame budget, while
-   * the same glyphs drawn without a shadow cost 0.33ms. Because the number
-   * of crests rises and falls as the field animates, that cost pulsed, so
-   * the page hitched intermittently rather than running uniformly slowly.
-   *
-   * Each glyph's glow is identical every time it is drawn, so it is now
-   * rendered once into a sprite sheet and blitted with drawImage. The blur
-   * happens GLYPHS.length times per resize instead of hundreds of times per
-   * frame, and the visual result is the same.
-   *
-   * The sheet is built at device resolution and drawn back at CSS size, so
-   * it stays sharp on hidpi displays instead of being upscaled.
-   */
-  function buildGlowAtlas(cellSize: number): void {
-    const blur = cellSize * 0.9;
-    const fontSize = cellSize * FONT_RATIO;
-    // Room for the glow to fall off on every side before the tile is cut.
-    const tile = Math.ceil(fontSize + blur * 3);
-    const accent = readCssVar("--color-accent", "#4ADE80");
-    const bloom = readCssVar("--color-bloom-hot", "#86EFAC");
-    // Colours are part of the key so a token change invalidates the sheet
-    // rather than leaving stale glows baked in.
-    const key = `${tile}|${dpr}|${fontFamily}|${accent}|${bloom}`;
-    if (glowKey === key && glowAtlas) return;
-
-    const sheet = document.createElement("canvas");
-    sheet.width = Math.max(1, Math.round(tile * dpr) * GLYPHS.length);
-    sheet.height = Math.max(1, Math.round(tile * dpr));
-    const sheetCtx = sheet.getContext("2d");
-    if (!sheetCtx) return;
-
-    sheetCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    sheetCtx.font = `${fontSize}px ${fontFamily}`;
-    sheetCtx.textAlign = "center";
-    sheetCtx.textBaseline = "middle";
-    sheetCtx.fillStyle = accent;
-    sheetCtx.shadowColor = bloom;
-    sheetCtx.shadowBlur = blur;
-    for (let i = 0; i < GLYPHS.length; i++) {
-      sheetCtx.fillText(GLYPHS[i], i * tile + tile / 2, tile / 2);
-    }
-
-    glowAtlas = sheet;
-    glowTile = tile;
-    glowKey = key;
-  }
+  let glow: GlowAtlas | null = null;
 
   function resizeCanvasToDisplaySize(): void {
     dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
@@ -327,7 +148,7 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
     ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
     grid = computeGrid(cssWidth, cssHeight, grid);
     fontFamily = readCssVar("--font-mono", FONT_FALLBACK);
-    buildGlowAtlas(grid.cellSize);
+    glow = buildGlowAtlas(grid.cellSize, dpr, fontFamily, glow);
   }
 
   function drawFrame(elapsedSeconds: number): void {
@@ -393,37 +214,20 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
       }
     }
 
-    // Additive bloom: crests are drawn a second time with 'lighter', which
-    // sums into the pixels already there. That is what makes the brightest
-    // cells actually glow rather than just being a lighter green.
-    if (crestX.length > 0 && glowAtlas) {
-      ctx!.save();
-      ctx!.globalCompositeOperation = "lighter";
-      ctx!.globalAlpha = 0.5;
-      // Blit the pre-blurred sprite instead of re-running shadowBlur per
-      // glyph. Source rect is in device pixels (the sheet's own space),
-      // destination in CSS pixels, which the canvas transform scales back
-      // up to exactly 1:1 on device pixels.
-      const srcTile = Math.round(glowTile * dpr);
-      const half = glowTile / 2;
-      for (let i = 0; i < crestX.length; i++) {
-        ctx!.drawImage(
-          glowAtlas,
-          crestGlyph[i] * srcTile,
-          0,
-          srcTile,
-          srcTile,
-          crestX[i] - half,
-          crestY[i] - half,
-          glowTile,
-          glowTile,
-        );
-      }
-      ctx!.restore();
+    // Additive bloom: crests are drawn a second time with 'lighter', shared
+    // with every glyph-rendering engine so the bloom pass is identical.
+    if (crestX.length > 0 && glow) {
+      drawCrests(ctx!, glow, dpr, crestX, crestY, crestGlyph);
     }
   }
 
   function renderStaticFrame(): void {
+    // Intensity 0 under reduced motion: nothing would be visible anyway, so
+    // just clear rather than paying for a static draw that's fully transparent.
+    if (intensity <= 0) {
+      ctx!.clearRect(0, 0, grid.cssWidth, grid.cssHeight);
+      return;
+    }
     // A single, fixed frame: never a shortened animation. Pick a
     // non-trivial t so the static field looks intentional, not flat.
     drawFrame(6.283);
@@ -440,6 +244,10 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
     if (reduced || destroyed) return;
     if (running) return;
     if (!isIntersecting || document.hidden) return;
+    // Intensity 0 means the field has been asked to stay off: see the
+    // comment on setIntensity. Nothing should wake it back up until
+    // intensity rises again.
+    if (intensity <= 0) return;
     running = true;
     rafId = requestAnimationFrame(loop);
   }
@@ -524,7 +332,22 @@ export function initGlyphField(canvas: HTMLCanvasElement): GlyphFieldHandle {
       startLoopIfNeeded();
     },
     setIntensity(v: number) {
-      intensity = Math.max(0, Math.min(1, v));
+      const next = Math.max(0, Math.min(1, v));
+      const wasZero = intensity <= 0;
+      intensity = next;
+      // The homepage hero now sometimes covers the field with an opaque
+      // fractal layer and holds field intensity at 0 for as long as that
+      // layer is up. Without this the field would keep computing a full
+      // grid every frame behind something fully opaque, for nothing.
+      if (intensity <= 0) {
+        if (!wasZero) {
+          stopLoop();
+          ctx!.clearRect(0, 0, grid.cssWidth, grid.cssHeight);
+        }
+      } else if (wasZero) {
+        if (reduced) renderStaticFrame();
+        else startLoopIfNeeded();
+      }
     },
   };
 }
